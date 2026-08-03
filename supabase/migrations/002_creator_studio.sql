@@ -1,30 +1,6 @@
--- Heart Guide — core schema
--- Run once against the Supabase project (Studio SQL editor or `supabase db push`).
+-- Creator Studio: self-serve guide creation
+-- Run once against the live project (Studio SQL editor).
 
-create extension if not exists pgcrypto;
-
--- Founder Access membership status, kept by email because GoHighLevel's
--- webhook only knows the customer's email, not their Supabase user id.
-create table if not exists public.founder_memberships (
-  email text primary key,
-  status text not null,
-  plan text,
-  source text not null default 'ghl',
-  updated_at timestamptz not null default now()
-);
-
-alter table public.founder_memberships enable row level security;
-
-create policy "Users can read their own membership"
-  on public.founder_memberships for select
-  to authenticated
-  using (email = (auth.jwt() ->> 'email'));
-
--- Writes only ever come from the GHL webhook route using the service-role
--- key, which bypasses RLS — no insert/update/delete policy is granted here.
-
--- Creator-authored guides. Anyone signed in can become a creator by
--- publishing a guide; no separate role/invite system.
 create table if not exists public.creator_profiles (
   user_id uuid primary key references auth.users (id) on delete cascade,
   display_name text not null,
@@ -94,35 +70,17 @@ create policy "Creators can delete their own guides"
   to authenticated
   using (creator_id = auth.uid());
 
--- Saved reflective journey progress, one row per in-progress or completed guide.
-create table if not exists public.guide_journey_entries (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users (id) on delete cascade,
-  guide_id uuid not null references public.guides (id) on delete cascade,
-  answers jsonb not null default '[]'::jsonb,
-  current_step integer not null default 0,
-  completed boolean not null default false,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
+-- guide_journey_entries.guide_id moves from a fixed text check constraint to a
+-- real foreign key against the new guides table. No production journey data
+-- exists yet (fresh table), so this drops and recreates the column safely.
+truncate table public.guide_journey_entries;
 
-create index if not exists guide_journey_entries_user_id_idx
-  on public.guide_journey_entries (user_id, updated_at desc);
+alter table public.guide_journey_entries
+  drop constraint if exists guide_journey_entries_guide_id_check;
 
-alter table public.guide_journey_entries enable row level security;
+alter table public.guide_journey_entries
+  alter column guide_id type uuid using guide_id::uuid;
 
-create policy "Users can read their own journeys"
-  on public.guide_journey_entries for select
-  to authenticated
-  using (user_id = auth.uid());
-
-create policy "Users can insert their own journeys"
-  on public.guide_journey_entries for insert
-  to authenticated
-  with check (user_id = auth.uid());
-
-create policy "Users can update their own journeys"
-  on public.guide_journey_entries for update
-  to authenticated
-  using (user_id = auth.uid())
-  with check (user_id = auth.uid());
+alter table public.guide_journey_entries
+  add constraint guide_journey_entries_guide_id_fkey
+  foreign key (guide_id) references public.guides (id) on delete cascade;

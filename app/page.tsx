@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { hasFounderAccess } from "@/lib/membership";
+import { getPublishedGuides } from "@/lib/guides";
 import HeartGuideClient from "./heart-guide-client";
 
 export const dynamic = "force-dynamic";
@@ -10,11 +11,15 @@ export default async function Page() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const founderAccess = user?.email ? await hasFounderAccess(supabase, user.email) : false;
+  const [founderAccess, guides] = await Promise.all([
+    user?.email ? hasFounderAccess(supabase, user.email) : Promise.resolve(false),
+    getPublishedGuides(supabase),
+  ]);
 
   return (
     <HeartGuideClient
       founderAccess={founderAccess}
+      guides={guides}
       user={
         user?.email
           ? {

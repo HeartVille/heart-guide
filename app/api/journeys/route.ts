@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
-const ALLOWED_GUIDES = new Set(["connection", "pause", "boundaries", "visibility", "weekly"]);
-
 export async function GET() {
   const supabase = await createClient();
   const {
@@ -47,7 +45,17 @@ export async function POST(request: Request) {
     completed?: boolean;
   };
 
-  if (!body.guideId || !ALLOWED_GUIDES.has(body.guideId) || !Array.isArray(body.answers)) {
+  if (!body.guideId || !Array.isArray(body.answers)) {
+    return NextResponse.json({ error: "Invalid journey." }, { status: 400 });
+  }
+
+  const { data: guideExists } = await supabase
+    .from("guides")
+    .select("id")
+    .eq("id", body.guideId)
+    .maybeSingle();
+
+  if (!guideExists) {
     return NextResponse.json({ error: "Invalid journey." }, { status: 400 });
   }
 

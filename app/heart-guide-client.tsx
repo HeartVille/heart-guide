@@ -2,154 +2,36 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-type View = "home" | "library" | "journey" | "my-journey" | "message-score" | "membership" | "creator";
+type View = "home" | "library" | "journey" | "my-journey" | "message-score" | "membership";
 type Category = "All" | "Relationships" | "Business" | "Wellbeing";
 type SignedInUser = { email: string; name: string };
+type JourneyStep = { label: string; question: string; placeholder: string };
+type Creator = {
+  displayName: string;
+  bio: string | null;
+  websiteUrl: string | null;
+  consultationUrl: string | null;
+  resourceUrl: string | null;
+};
+type Guide = {
+  id: string;
+  title: string;
+  category: string;
+  description: string;
+  colour: string;
+  symbol: string;
+  questions: JourneyStep[];
+  creator: Creator | null;
+};
 type SavedJourney = {
   id: string;
-  guideId: keyof typeof guideJourneys;
+  guideId: string;
   answers: string[];
   currentStep: number;
   completed: boolean;
   createdAt: string;
   updatedAt: string;
 };
-
-const guides = [
-  {
-    id: "connection",
-    title: "Connection Clarity",
-    category: "Relationships",
-    description: "Understand what is creating distance and discover one honest next step towards deeper connection.",
-    duration: "1–3 min",
-    colour: "jade",
-    symbol: "♡",
-    access: "Free",
-  },
-  {
-    id: "business",
-    title: "Soul-Aligned Message Score",
-    category: "Business",
-    description: "Discover how clearly your message speaks to the right clients and receive a personalised path to strengthen it.",
-    duration: "1–3 min",
-    colour: "violet",
-    symbol: "✦",
-    access: "Free",
-  },
-  {
-    id: "pause",
-    title: "Heart-Mindful Pause",
-    category: "Wellbeing",
-    description: "Pause, listen inwardly and return to your day with greater presence, softness and choice.",
-    duration: "1–3 min",
-    colour: "aqua",
-    symbol: "⌁",
-    access: "Free",
-  },
-  {
-    id: "boundaries",
-    title: "Loving Boundaries",
-    category: "Relationships",
-    description: "Find language for a clear boundary that honours both your needs and the relationship.",
-    duration: "1–3 min",
-    colour: "gold",
-    symbol: "◌",
-    access: "Free",
-  },
-  {
-    id: "visibility",
-    title: "Aligned Visibility",
-    category: "Business",
-    description: "Find a way to be seen that feels natural, useful and true to the work you are here to share.",
-    duration: "1–3 min",
-    colour: "rose",
-    symbol: "◇",
-    access: "Free",
-  },
-  {
-    id: "weekly",
-    title: "Weekly Heart Compass",
-    category: "Wellbeing",
-    description: "Reflect on the week, recognise what matters and choose a grounded intention for what comes next.",
-    duration: "1–3 min",
-    colour: "sage",
-    symbol: "☼",
-    access: "Free",
-  },
-] as const;
-
-const guideJourneys = {
-  connection: [
-  {
-    label: "Arrive",
-    question: "Before we explore the situation, take one gentle breath. What relationship would you like clarity about today?",
-    placeholder: "For example, my partner, a family member, a colleague…",
-  },
-  {
-    label: "Notice",
-    question: "When you think about this relationship now, what feels most difficult or unresolved?",
-    placeholder: "Share only what feels comfortable…",
-  },
-  {
-    label: "Listen",
-    question: "Beneath the difficulty, what are you longing to feel, receive or express?",
-    placeholder: "Perhaps understanding, safety, honesty, closeness…",
-  },
-  {
-    label: "Choose",
-    question: "What is one small, loving and honest action you could take within the next seven days?",
-    placeholder: "A conversation, a boundary, a moment of care…",
-  },
-  ],
-  pause: [
-    {
-      label: "Arrive",
-      question: "Before doing anything else, what do you notice in your body and breath right now?",
-      placeholder: "There is no need to change it—simply notice…",
-    },
-    {
-      label: "Soften",
-      question: "What are you carrying today that could be held with a little more kindness?",
-      placeholder: "A feeling, pressure, decision or unfinished moment…",
-    },
-    {
-      label: "Listen",
-      question: "If your heart could offer one quiet piece of wisdom, what might it say?",
-      placeholder: "Let the answer be simple…",
-    },
-    {
-      label: "Return",
-      question: "What small choice would help you return to your day with greater presence?",
-      placeholder: "One breath, boundary, conversation or act of care…",
-    },
-  ],
-  boundaries: [
-    { label: "Arrive", question: "Where in your life is a boundary asking to be heard?", placeholder: "A relationship, request or recurring situation…" },
-    { label: "Notice", question: "What happens inside you when this boundary is crossed or left unspoken?", placeholder: "Notice feelings, sensations and familiar patterns…" },
-    { label: "Honour", question: "What need or value would this boundary protect?", placeholder: "Rest, respect, time, safety, honesty…" },
-    { label: "Express", question: "How could you express this boundary clearly, warmly and without over-explaining?", placeholder: "Try: I care about… and I need…" },
-  ],
-  visibility: [
-    { label: "Arrive", question: "Where are you longing to be more visible in your work?", placeholder: "A conversation, platform, offer or audience…" },
-    { label: "Notice", question: "What feels uncomfortable or unsafe about being seen there?", placeholder: "Name the fear without judging it…" },
-    { label: "Align", question: "What useful truth or lived wisdom are you ready to share?", placeholder: "Something your right people genuinely need…" },
-    { label: "Choose", question: "What is one natural, generous visibility action you can take this week?", placeholder: "A post, invitation, conversation or collaboration…" },
-  ],
-  weekly: [
-    { label: "Arrive", question: "As you arrive at the end of this week, what feels most alive in you?", placeholder: "A feeling, image, word or moment…" },
-    { label: "Recognise", question: "What are you proud of, grateful for or learning from?", placeholder: "Include small moments as well as milestones…" },
-    { label: "Release", question: "What are you ready to stop carrying into the next week?", placeholder: "A pressure, expectation, task or old story…" },
-    { label: "Orient", question: "What heart-led intention will guide your next seven days?", placeholder: "Choose one clear and grounded intention…" },
-  ],
-} as const;
-
-const journeyDetails = {
-  connection: { symbol: "♡", category: "Relationship Guide", title: "Connection Clarity" },
-  pause: { symbol: "⌁", category: "Wellbeing Guide", title: "Heart-Mindful Pause" },
-  boundaries: { symbol: "◌", category: "Relationship Guide", title: "Loving Boundaries" },
-  visibility: { symbol: "◇", category: "Business Guide", title: "Aligned Visibility" },
-  weekly: { symbol: "☼", category: "Wellbeing Guide", title: "Weekly Heart Compass" },
-} as const;
 
 const FOUNDER_CHECKOUT_URL = "https://links.heartville.org/payment-link/6a622ebe7b99151a54040194";
 
@@ -164,9 +46,11 @@ function Mark({ small = false }: { small?: boolean }) {
 export default function HeartGuideClient({
   user,
   founderAccess,
+  guides,
 }: {
   user: SignedInUser | null;
   founderAccess: boolean;
+  guides: Guide[];
 }) {
   const [view, setView] = useState<View>("home");
   const [category, setCategory] = useState<Category>("All");
@@ -181,14 +65,14 @@ export default function HeartGuideClient({
   const [email, setEmail] = useState("");
   const [consent, setConsent] = useState(false);
   const [submissionState, setSubmissionState] = useState<"idle" | "sending" | "saved" | "offline">("idle");
-  const [activeGuide, setActiveGuide] = useState<keyof typeof guideJourneys>("connection");
+  const [activeGuideId, setActiveGuideId] = useState<string | null>(guides[0]?.id ?? null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [savedJourneys, setSavedJourneys] = useState<SavedJourney[]>([]);
   const [activeJourneyId, setActiveJourneyId] = useState<string | null>(null);
   const [journeysLoading, setJourneysLoading] = useState(Boolean(user));
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  const journeySteps = guideJourneys[activeGuide];
-  const journeyDetail = journeyDetails[activeGuide];
+  const activeGuide = guides.find((guide) => guide.id === activeGuideId) ?? null;
+  const journeySteps = activeGuide?.questions ?? [];
 
   useEffect(() => {
     if (!user) return;
@@ -225,29 +109,21 @@ export default function HeartGuideClient({
     navigate("my-journey");
   }
 
-  function canOpenGuide(id: string, access: string) {
+  function canOpenGuide(id: string) {
     if (!user) {
       window.location.assign("/sign-in?next=/");
       return false;
     }
-    if (access === "Member" && !founderAccess) {
-      navigate("membership");
-      return false;
-    }
-    return id in guideJourneys;
+    return guides.some((guide) => guide.id === id);
   }
 
-  function startGuide(id: string, access: string = "Free") {
-    if (id === "business") {
-      startMessageScore();
-      return;
-    }
-    if (!(id in guideJourneys)) {
+  function startGuide(id: string) {
+    if (!guides.some((guide) => guide.id === id)) {
       setNotice("This guide is being lovingly prepared.");
       return;
     }
-    if (!canOpenGuide(id, access)) return;
-    setActiveGuide(id as keyof typeof guideJourneys);
+    if (!canOpenGuide(id)) return;
+    setActiveGuideId(id);
     const saved = savedJourneys.find((journey) => journey.guideId === id && !journey.completed);
     setActiveJourneyId(saved?.id ?? null);
     setStep(saved?.currentStep ?? 0);
@@ -258,9 +134,8 @@ export default function HeartGuideClient({
   }
 
   function openSavedJourney(journey: SavedJourney) {
-    const guide = guides.find((item) => item.id === journey.guideId);
-    if (!canOpenGuide(journey.guideId, guide?.access ?? "Free")) return;
-    setActiveGuide(journey.guideId);
+    if (!canOpenGuide(journey.guideId)) return;
+    setActiveGuideId(journey.guideId);
     setActiveJourneyId(journey.id);
     setStep(journey.currentStep);
     setAnswers(journey.answers?.length === 4 ? journey.answers : ["", "", "", ""]);
@@ -269,10 +144,9 @@ export default function HeartGuideClient({
     navigate("journey");
   }
 
-  function startNewJourney(id: keyof typeof guideJourneys) {
-    const guide = guides.find((item) => item.id === id);
-    if (!canOpenGuide(id, guide?.access ?? "Free")) return;
-    setActiveGuide(id);
+  function startNewJourney(id: string) {
+    if (!canOpenGuide(id)) return;
+    setActiveGuideId(id);
     setActiveJourneyId(null);
     setStep(0);
     setAnswers(["", "", "", ""]);
@@ -355,13 +229,13 @@ export default function HeartGuideClient({
       const response = await fetch("/api/journeys", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ journeyId: activeJourneyId, guideId: activeGuide, answers, currentStep: nextStep, completed: isCompleted }),
+        body: JSON.stringify({ journeyId: activeJourneyId, guideId: activeGuideId, answers, currentStep: nextStep, completed: isCompleted }),
       });
       if (!response.ok) throw new Error("Unable to save");
       const result = (await response.json()) as { journeyId: string; createdAt: string; updatedAt: string };
       setActiveJourneyId(result.journeyId);
       setSavedJourneys((current) => [
-        { id: result.journeyId, guideId: activeGuide, answers, currentStep: nextStep, completed: isCompleted, createdAt: current.find((journey) => journey.id === result.journeyId)?.createdAt ?? result.createdAt, updatedAt: result.updatedAt },
+        { id: result.journeyId, guideId: activeGuideId!, answers, currentStep: nextStep, completed: isCompleted, createdAt: current.find((journey) => journey.id === result.journeyId)?.createdAt ?? result.createdAt, updatedAt: result.updatedAt },
         ...current.filter((journey) => journey.id !== result.journeyId),
       ]);
       setSaveState("saved");
@@ -393,7 +267,7 @@ export default function HeartGuideClient({
           <button className={view === "library" ? "active" : ""} onClick={() => navigate("library")}>Explore Guides</button>
           <button className={view === "my-journey" ? "active" : ""} onClick={openMyJourney}>My Journey</button>
           <button className={view === "membership" ? "active" : ""} onClick={() => navigate("membership")}>Founder Access</button>
-          <button className={view === "creator" ? "active" : ""} onClick={() => navigate("creator")}>For Creators</button>
+          <a href="/creator">For Creators</a>
         </nav>
         <button className={`profile ${user ? "signed-in" : ""}`} onClick={() => user ? setProfileOpen((open) => !open) : window.location.assign("/sign-in?next=/")} aria-label={user ? "Open member profile" : "Sign in"}>
           <span className="profile-head" />
@@ -431,7 +305,7 @@ export default function HeartGuideClient({
           </section>
           <section className="featured" aria-label="Featured Heart Guides">
             {guides.slice(0, 3).map((guide) => (
-              <button className={`feature-card ${guide.colour}`} key={guide.id} onClick={() => guide.id === "business" ? startMessageScore() : startGuide(guide.id, guide.access)}>
+              <button className={`feature-card ${guide.colour}`} key={guide.id} onClick={() => startGuide(guide.id)}>
                 <span className="guide-icon">{guide.symbol}</span>
                 <span><small>{guide.category}</small><strong>{guide.title}</strong></span>
                 <b>→</b>
@@ -470,13 +344,16 @@ export default function HeartGuideClient({
               <article className="guide-card" key={guide.id}>
                 <div className={`guide-art ${guide.colour}`}><span>{guide.symbol}</span><i /><b /></div>
                 <div className="guide-content">
-                  <div className="guide-meta"><span>{guide.category}</span><span>{guide.access}</span></div>
+                  <div className="guide-meta"><span>{guide.category}</span><span>Free</span></div>
                   <h2>{guide.title}</h2>
                   <p>{guide.description}</p>
-                  <div className="guide-footer"><small>{guide.duration}</small><button onClick={() => startGuide(guide.id, guide.access)}>Begin guide →</button></div>
+                  <div className="guide-footer"><small>1–3 min</small><button onClick={() => startGuide(guide.id)}>Begin guide →</button></div>
                 </div>
               </article>
             ))}
+            {filtered.length === 0 && (
+              <p className="journey-empty">No guides match your search yet.</p>
+            )}
           </section>
         </main>
       )}
@@ -500,7 +377,8 @@ export default function HeartGuideClient({
           ) : (
             <section className="saved-grid">
               {savedJourneys.map((journey) => {
-                const detail = journeyDetails[journey.guideId];
+                const detail = guides.find((guide) => guide.id === journey.guideId);
+                if (!detail) return null;
                 return (
                   <article className="saved-card" key={journey.id}>
                     <span className="guide-icon">{detail.symbol}</span>
@@ -525,11 +403,11 @@ export default function HeartGuideClient({
         </main>
       )}
 
-      {view === "journey" && (
+      {view === "journey" && activeGuide && (
         <main className="journey-page">
           <aside className="journey-side">
             <button className="back" onClick={() => navigate("library")}>← Back to guides</button>
-            <div className="journey-title"><span className="guide-icon">{journeyDetail.symbol}</span><p>{journeyDetail.category}</p><h1>{journeyDetail.title}</h1></div>
+            <div className="journey-title"><span className="guide-icon">{activeGuide.symbol}</span><p>{activeGuide.category}</p><h1>{activeGuide.title}</h1></div>
             <ol>
               {journeySteps.map((item, index) => <li className={index === step ? "current" : index < step || finished ? "done" : ""} key={item.label}><span>{index < step || finished ? "✓" : index + 1}</span>{item.label}</li>)}
             </ol>
@@ -552,13 +430,24 @@ export default function HeartGuideClient({
             ) : (
               <div className="result-card">
                 <div className="result-mark">✦</div>
-                <p className="eyebrow">Your {journeyDetail.title} reflection</p>
+                <p className="eyebrow">Your {activeGuide.title} reflection</p>
                 <h2>A gentle next step has emerged.</h2>
                 <p>You began by listening to what is difficult, then named the deeper longing beneath it. The action you chose is:</p>
                 <blockquote>“{answers[3]}”</blockquote>
                 <p className="result-note">Carry this as an invitation rather than another task. Notice what support, timing or boundary would help you approach it with care.</p>
-                <div className="actions"><button className="button primary" onClick={() => window.print()}>Print my reflection</button><button className="button secondary" onClick={openMyJourney}>My Journey</button><button className="text-button" onClick={() => startNewJourney(activeGuide)}>Start this guide again</button></div>
+                <div className="actions"><button className="button primary" onClick={() => window.print()}>Print my reflection</button><button className="button secondary" onClick={openMyJourney}>My Journey</button><button className="text-button" onClick={() => startNewJourney(activeGuide.id)}>Start this guide again</button></div>
                 {user && <p className={`save-status ${saveState}`}>{saveState === "saving" ? "Saving privately…" : saveState === "error" ? "Could not save just now." : "✓ Saved privately to My Journey"}</p>}
+                {activeGuide.creator && (
+                  <div className="creator-cta">
+                    <p className="eyebrow">This guide was created by {activeGuide.creator.displayName}</p>
+                    {activeGuide.creator.bio && <p>{activeGuide.creator.bio}</p>}
+                    <div className="actions">
+                      {activeGuide.creator.websiteUrl && <a className="button secondary" href={activeGuide.creator.websiteUrl} target="_blank" rel="noreferrer">Visit website <span>→</span></a>}
+                      {activeGuide.creator.consultationUrl && <a className="button secondary" href={activeGuide.creator.consultationUrl} target="_blank" rel="noreferrer">Book a consultation <span>→</span></a>}
+                      {activeGuide.creator.resourceUrl && <a className="button secondary" href={activeGuide.creator.resourceUrl} target="_blank" rel="noreferrer">Free resource <span>→</span></a>}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </section>
@@ -675,23 +564,6 @@ export default function HeartGuideClient({
                 <p className="membership-note">Secure checkout. Choose monthly or annual payment on the next page.</p>
               </>
             )}
-          </section>
-        </main>
-      )}
-
-      {view === "creator" && (
-        <main className="creator-page">
-          <aside className="creator-nav">
-            <div><Mark small /><strong>Creator Studio</strong></div>
-            <button className="active">⌂ &nbsp; Overview</button><button>◇ &nbsp; Heart Guides</button><button>♙ &nbsp; Members</button><button>⌁ &nbsp; Insights</button><button>⚙ &nbsp; Settings</button>
-          </aside>
-          <section className="dashboard">
-            <div className="dashboard-head"><div><p className="eyebrow">Heart Guide Studio</p><h1>Good afternoon, Lotus.</h1><p>Here is how your Guides are supporting people.</p></div><button className="button primary" onClick={() => setNotice("The Guide Builder will be activated in the next stage.")}>＋ Create a Heart Guide</button></div>
-            <div className="metrics"><article><small>Published Guides</small><strong>6</strong><span>3 free · 3 member</span></article><article><small>Message Scores</small><strong>128</strong><span className="positive">↑ 18% this month</span></article><article><small>Validation invites</small><strong>91</strong><span>GHL nurture ready</span></article><article><small>Calls booked</small><strong>24</strong><span>Validation before strategy</span></article></div>
-            <div className="dashboard-grid">
-              <section className="panel"><div className="panel-title"><div><h2>Your Heart Guides</h2><p>Manage and understand each journey.</p></div><button onClick={() => navigate("library")}>View library →</button></div>{guides.slice(0, 4).map((guide, index) => <div className="guide-row" key={guide.id}><span className={`mini-icon ${guide.colour}`}>{guide.symbol}</span><div><strong>{guide.title}</strong><small>{index === 0 ? "Published · Free" : index < 3 ? "Published" : "Draft"}</small></div><b>{[56, 32, 27, 0][index]} journeys</b><button aria-label={`Edit ${guide.title}`}>•••</button></div>)}</section>
-              <section className="panel insight-panel"><div className="panel-title"><div><h2>Recent insight</h2><p>Last 30 days</p></div></div><div className="completion-ring"><span>71<small>%</small></span></div><h3>People are completing the journey.</h3><p>Connection Clarity has your strongest completion rate this month.</p><button className="button secondary" onClick={() => setNotice("Detailed analytics will be connected in the next stage.")}>View insights</button></section>
-            </div>
           </section>
         </main>
       )}
