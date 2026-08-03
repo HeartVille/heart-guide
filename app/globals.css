@@ -95,6 +95,7 @@ footer{border-top:1px solid var(--line);min-height:120px;padding:25px 48px;displ
 .guide-row form{display:contents}
 .creator-form-card{width:min(640px,100%)}
 .guide-form{gap:20px}.guide-form textarea,.guide-form select{width:100%;margin-top:8px;border:1px solid var(--line);border-radius:13px;padding:12px 14px;background:#fffefa;outline:0;resize:vertical}.guide-form select{height:50px;padding:0 14px}
+.ai-assist{border:1px solid rgba(214,179,106,.45);background:#fffaf0;border-radius:16px;padding:20px;display:grid;gap:12px}.ai-assist button{width:max-content}.ai-assist .guide-form-hint{margin:0}
 .guide-form-heading{font:500 24px "Cormorant Garamond",serif;margin:10px 0 0}
 .guide-form-hint{color:var(--muted);font-size:12px;margin:4px 0 0}
 .guide-step-fieldset{border:1px solid var(--line);border-radius:16px;padding:18px 20px;display:grid;gap:14px;margin:0}
