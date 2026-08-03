@@ -15,7 +15,7 @@ export default async function CreatorPage() {
   const [{ data: profile }, { data: guides }] = await Promise.all([
     supabase
       .from("creator_profiles")
-      .select("display_name, bio, website_url, consultation_url, resource_url, resource_links")
+      .select("display_name, avatar_url, bio, resource_title, resource_description, resource_url, cta_label")
       .eq("user_id", user.id)
       .maybeSingle(),
     supabase
@@ -35,7 +35,7 @@ export default async function CreatorPage() {
             <p>
               {profile
                 ? "Manage your profile and your published Heart Guides."
-                : "Set up your creator profile, then build a free Heart Guide of your own. Your website, consultation and resource links appear at the end of every guide you publish."}
+                : "Set up your creator profile, then build a free Heart Guide of your own. Your name, bio and resource link appear at the end of every guide you publish."}
             </p>
           </div>
           <Link className="button primary" href="/creator/profile">
@@ -45,16 +45,20 @@ export default async function CreatorPage() {
 
         {profile && (
           <section className="panel profile-summary">
-            <h2>{profile.display_name}</h2>
-            {profile.bio && <p>{profile.bio}</p>}
-            <div className="profile-links">
-              {profile.website_url && <a href={profile.website_url} target="_blank" rel="noreferrer">Website ↗</a>}
-              {profile.consultation_url && <a href={profile.consultation_url} target="_blank" rel="noreferrer">Consultation ↗</a>}
-              {profile.resource_url && <a href={profile.resource_url} target="_blank" rel="noreferrer">Resource ↗</a>}
-              {((profile.resource_links as { label: string; url: string }[] | null) ?? []).map((link) => (
-                <a href={link.url} target="_blank" rel="noreferrer" key={link.label}>{link.label} ↗</a>
-              ))}
+            <div className="profile-summary-head">
+              {profile.avatar_url && <img className="profile-avatar" src={profile.avatar_url} alt={profile.display_name} />}
+              <div>
+                <h2>{profile.display_name}</h2>
+                {profile.bio && <p>{profile.bio}</p>}
+              </div>
             </div>
+            {profile.resource_url && (
+              <div className="profile-links">
+                <a href={profile.resource_url} target="_blank" rel="noreferrer">
+                  {profile.resource_title || "Resource"} ↗
+                </a>
+              </div>
+            )}
           </section>
         )}
 

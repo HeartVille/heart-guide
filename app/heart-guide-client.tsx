@@ -6,14 +6,14 @@ type View = "home" | "library" | "journey" | "my-journey" | "message-score" | "m
 type Category = "All" | "Relationships" | "Business" | "Wellbeing";
 type SignedInUser = { email: string; name: string };
 type JourneyStep = { label: string; question: string; placeholder: string };
-type ResourceLink = { label: string; url: string };
 type Creator = {
   displayName: string;
+  avatarUrl: string | null;
   bio: string | null;
-  websiteUrl: string | null;
-  consultationUrl: string | null;
+  resourceTitle: string | null;
+  resourceDescription: string | null;
   resourceUrl: string | null;
-  resourceLinks: ResourceLink[];
+  ctaLabel: string | null;
 };
 type Guide = {
   id: string;
@@ -441,16 +441,27 @@ export default function HeartGuideClient({
                 {user && <p className={`save-status ${saveState}`}>{saveState === "saving" ? "Saving privately…" : saveState === "error" ? "Could not save just now." : "✓ Saved privately to My Journey"}</p>}
                 {activeGuide.creator && (
                   <div className="creator-cta">
-                    <p className="eyebrow">This guide was created by {activeGuide.creator.displayName}</p>
-                    {activeGuide.creator.bio && <p>{activeGuide.creator.bio}</p>}
-                    <div className="actions">
-                      {activeGuide.creator.websiteUrl && <a className="button secondary" href={activeGuide.creator.websiteUrl} target="_blank" rel="noreferrer">Visit website <span>→</span></a>}
-                      {activeGuide.creator.consultationUrl && <a className="button secondary" href={activeGuide.creator.consultationUrl} target="_blank" rel="noreferrer">Book a consultation <span>→</span></a>}
-                      {activeGuide.creator.resourceUrl && <a className="button secondary" href={activeGuide.creator.resourceUrl} target="_blank" rel="noreferrer">Free resource <span>→</span></a>}
-                      {activeGuide.creator.resourceLinks.map((link) => (
-                        <a className="button secondary" href={link.url} target="_blank" rel="noreferrer" key={link.label}>{link.label} <span>→</span></a>
-                      ))}
+                    <p className="eyebrow">Continue your journey</p>
+                    <div className="creator-cta-head">
+                      {activeGuide.creator.avatarUrl && <img className="profile-avatar" src={activeGuide.creator.avatarUrl} alt={activeGuide.creator.displayName} />}
+                      <div>
+                        <h3>{activeGuide.creator.displayName}</h3>
+                        {activeGuide.creator.bio && <p>{activeGuide.creator.bio}</p>}
+                      </div>
                     </div>
+                    {activeGuide.creator.resourceTitle && (
+                      <div className="creator-resource">
+                        <strong>{activeGuide.creator.resourceTitle}</strong>
+                        {activeGuide.creator.resourceDescription && <p>{activeGuide.creator.resourceDescription}</p>}
+                      </div>
+                    )}
+                    {activeGuide.creator.resourceUrl && (
+                      <div className="actions">
+                        <a className="button primary" href={activeGuide.creator.resourceUrl} target="_blank" rel="noreferrer">
+                          {activeGuide.creator.ctaLabel || "Learn more"} <span>→</span>
+                        </a>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

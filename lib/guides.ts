@@ -1,14 +1,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type JourneyStep = { label: string; question: string; placeholder: string };
-export type ResourceLink = { label: string; url: string };
 export type Creator = {
   displayName: string;
+  avatarUrl: string | null;
   bio: string | null;
-  websiteUrl: string | null;
-  consultationUrl: string | null;
+  resourceTitle: string | null;
+  resourceDescription: string | null;
   resourceUrl: string | null;
-  resourceLinks: ResourceLink[];
+  ctaLabel: string | null;
 };
 export type Guide = {
   id: string;
@@ -35,11 +35,12 @@ type GuideRow = {
 type CreatorRow = {
   user_id: string;
   display_name: string;
+  avatar_url: string | null;
   bio: string | null;
-  website_url: string | null;
-  consultation_url: string | null;
+  resource_title: string | null;
+  resource_description: string | null;
   resource_url: string | null;
-  resource_links: ResourceLink[] | null;
+  cta_label: string | null;
 };
 
 export async function getPublishedGuides(supabase: SupabaseClient): Promise<Guide[]> {
@@ -59,7 +60,7 @@ export async function attachCreators(supabase: SupabaseClient, guideRows: GuideR
     creatorIds.length > 0
       ? await supabase
           .from("creator_profiles")
-          .select("user_id, display_name, bio, website_url, consultation_url, resource_url, resource_links")
+          .select("user_id, display_name, avatar_url, bio, resource_title, resource_description, resource_url, cta_label")
           .in("user_id", creatorIds)
       : { data: [] as CreatorRow[] };
 
@@ -78,11 +79,12 @@ export async function attachCreators(supabase: SupabaseClient, guideRows: GuideR
       creator: creatorRow
         ? {
             displayName: creatorRow.display_name,
+            avatarUrl: creatorRow.avatar_url,
             bio: creatorRow.bio,
-            websiteUrl: creatorRow.website_url,
-            consultationUrl: creatorRow.consultation_url,
+            resourceTitle: creatorRow.resource_title,
+            resourceDescription: creatorRow.resource_description,
             resourceUrl: creatorRow.resource_url,
-            resourceLinks: creatorRow.resource_links ?? [],
+            ctaLabel: creatorRow.cta_label,
           }
         : null,
     };

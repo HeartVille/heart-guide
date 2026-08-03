@@ -28,11 +28,15 @@ create policy "Users can read their own membership"
 create table if not exists public.creator_profiles (
   user_id uuid primary key references auth.users (id) on delete cascade,
   display_name text not null,
+  avatar_url text,
   bio text,
   website_url text,
   consultation_url text,
+  resource_title text,
+  resource_description text,
   resource_url text,
   resource_links jsonb not null default '[]'::jsonb,
+  cta_label text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
