@@ -15,6 +15,15 @@ async function requireUser() {
   return { supabase, user };
 }
 
+function buildResourceLinks(formData: FormData) {
+  return [0, 1, 2, 3]
+    .map((index) => ({
+      label: String(formData.get(`resourceLabel${index}`) ?? "").trim(),
+      url: String(formData.get(`resourceLinkUrl${index}`) ?? "").trim(),
+    }))
+    .filter((link) => link.label && link.url);
+}
+
 export async function saveProfile(formData: FormData) {
   const { supabase, user } = await requireUser();
   const displayName = String(formData.get("displayName") ?? "").trim();
@@ -22,6 +31,7 @@ export async function saveProfile(formData: FormData) {
   const websiteUrl = String(formData.get("websiteUrl") ?? "").trim();
   const consultationUrl = String(formData.get("consultationUrl") ?? "").trim();
   const resourceUrl = String(formData.get("resourceUrl") ?? "").trim();
+  const resourceLinks = buildResourceLinks(formData);
 
   if (!displayName) {
     redirect(`/creator/profile?error=${encodeURIComponent("Please enter a display name.")}`);
@@ -34,6 +44,7 @@ export async function saveProfile(formData: FormData) {
     website_url: websiteUrl || null,
     consultation_url: consultationUrl || null,
     resource_url: resourceUrl || null,
+    resource_links: resourceLinks,
     updated_at: new Date().toISOString(),
   });
 

@@ -6,12 +6,14 @@ type View = "home" | "library" | "journey" | "my-journey" | "message-score" | "m
 type Category = "All" | "Relationships" | "Business" | "Wellbeing";
 type SignedInUser = { email: string; name: string };
 type JourneyStep = { label: string; question: string; placeholder: string };
+type ResourceLink = { label: string; url: string };
 type Creator = {
   displayName: string;
   bio: string | null;
   websiteUrl: string | null;
   consultationUrl: string | null;
   resourceUrl: string | null;
+  resourceLinks: ResourceLink[];
 };
 type Guide = {
   id: string;
@@ -445,6 +447,9 @@ export default function HeartGuideClient({
                       {activeGuide.creator.websiteUrl && <a className="button secondary" href={activeGuide.creator.websiteUrl} target="_blank" rel="noreferrer">Visit website <span>→</span></a>}
                       {activeGuide.creator.consultationUrl && <a className="button secondary" href={activeGuide.creator.consultationUrl} target="_blank" rel="noreferrer">Book a consultation <span>→</span></a>}
                       {activeGuide.creator.resourceUrl && <a className="button secondary" href={activeGuide.creator.resourceUrl} target="_blank" rel="noreferrer">Free resource <span>→</span></a>}
+                      {activeGuide.creator.resourceLinks.map((link) => (
+                        <a className="button secondary" href={link.url} target="_blank" rel="noreferrer" key={link.label}>{link.label} <span>→</span></a>
+                      ))}
                     </div>
                   </div>
                 )}

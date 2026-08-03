@@ -32,6 +32,7 @@ create table if not exists public.creator_profiles (
   website_url text,
   consultation_url text,
   resource_url text,
+  resource_links jsonb not null default '[]'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
