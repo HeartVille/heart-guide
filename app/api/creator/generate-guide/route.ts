@@ -92,6 +92,8 @@ export async function POST(request: Request) {
   }
 
   if (!response.ok) {
+    const errorBody = await response.text().catch(() => "");
+    console.error("OpenAI generate-guide error", response.status, errorBody);
     return NextResponse.json({ error: "Unable to generate a guide right now." }, { status: 502 });
   }
 
