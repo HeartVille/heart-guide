@@ -21,7 +21,7 @@ const guides = [
     title: "Connection Clarity",
     category: "Relationships",
     description: "Understand what is creating distance and discover one honest next step towards deeper connection.",
-    duration: "8–10 min",
+    duration: "1–3 min",
     colour: "jade",
     symbol: "♡",
     access: "Free",
@@ -31,7 +31,7 @@ const guides = [
     title: "Soul-Aligned Message Score",
     category: "Business",
     description: "Discover how clearly your message speaks to the right clients and receive a personalised path to strengthen it.",
-    duration: "3 min",
+    duration: "1–3 min",
     colour: "violet",
     symbol: "✦",
     access: "Free",
@@ -41,7 +41,7 @@ const guides = [
     title: "Heart-Mindful Pause",
     category: "Wellbeing",
     description: "Pause, listen inwardly and return to your day with greater presence, softness and choice.",
-    duration: "5 min",
+    duration: "1–3 min",
     colour: "aqua",
     symbol: "⌁",
     access: "Free",
@@ -51,30 +51,30 @@ const guides = [
     title: "Loving Boundaries",
     category: "Relationships",
     description: "Find language for a clear boundary that honours both your needs and the relationship.",
-    duration: "10 min",
+    duration: "1–3 min",
     colour: "gold",
     symbol: "◌",
-    access: "Member",
+    access: "Free",
   },
   {
     id: "visibility",
     title: "Aligned Visibility",
     category: "Business",
     description: "Find a way to be seen that feels natural, useful and true to the work you are here to share.",
-    duration: "12 min",
+    duration: "1–3 min",
     colour: "rose",
     symbol: "◇",
-    access: "Member",
+    access: "Free",
   },
   {
     id: "weekly",
     title: "Weekly Heart Compass",
     category: "Wellbeing",
     description: "Reflect on the week, recognise what matters and choose a grounded intention for what comes next.",
-    duration: "8 min",
+    duration: "1–3 min",
     colour: "sage",
     symbol: "☼",
-    access: "Member",
+    access: "Free",
   },
 ] as const;
 
@@ -226,7 +226,7 @@ export default function HeartGuideClient({
   }
 
   function canOpenGuide(id: string, access: string) {
-    if (access === "Member" && !user) {
+    if (!user) {
       window.location.assign("/sign-in?next=/");
       return false;
     }
@@ -473,7 +473,7 @@ export default function HeartGuideClient({
                   <div className="guide-meta"><span>{guide.category}</span><span>{guide.access}</span></div>
                   <h2>{guide.title}</h2>
                   <p>{guide.description}</p>
-                  <div className="guide-footer"><small>{guide.duration}</small><button onClick={() => startGuide(guide.id, guide.access)}>{guide.access === "Member" ? "Unlock with Founder Access →" : "Begin guide →"}</button></div>
+                  <div className="guide-footer"><small>{guide.duration}</small><button onClick={() => startGuide(guide.id, guide.access)}>Begin guide →</button></div>
                 </div>
               </article>
             ))}
@@ -657,20 +657,18 @@ export default function HeartGuideClient({
             <div className="score-badge">{founderAccess ? "Founder Access active" : "Founding member invitation"}</div>
             <p className="eyebrow">Continue your Heart Guide journey</p>
             <h1>Return whenever you need a wiser next step.</h1>
-            <p className="membership-lede">Founder Access is for people who want to use the full Heart Guide library, revisit their reflections and continue building a private record of their journey.</p>
+            <p className="membership-lede">Every Heart Guide is free to use. Founder Access is for people who want to support Heart Guide from the start and lock in founder pricing for whatever comes next.</p>
             <div className="founder-price">
               <div><strong>$19</strong><span>/month</span></div>
               <i>or</i>
               <div><strong>$190</strong><span>/year</span><small>Save $38</small></div>
             </div>
             <ul className="membership-benefits">
-              <li>Access to every Heart Guide</li>
-              <li>Repeat guides whenever fresh clarity is needed</li>
-              <li>Save unfinished and completed reflections in My Journey</li>
-              <li>Founder pricing while your membership remains active</li>
+              <li>Support Heart Guide as a founding member</li>
+              <li>Founder pricing locked in for any future member-only offerings</li>
             </ul>
             {founderAccess ? (
-              <button className="button primary membership-cta" onClick={() => navigate("library")}>Explore all member guides <span>→</span></button>
+              <button className="button primary membership-cta" onClick={() => navigate("library")}>Explore Heart Guides <span>→</span></button>
             ) : (
               <>
                 <a className="button primary membership-cta" href={FOUNDER_CHECKOUT_URL}>Choose my Founder Access <span>→</span></a>
