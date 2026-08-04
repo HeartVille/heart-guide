@@ -36,6 +36,15 @@ type SavedJourney = {
 };
 
 const FOUNDER_CHECKOUT_URL = "https://links.heartville.org/payment-link/6a622ebe7b99151a54040194";
+const PENDING_RESULT_KEY = "heart-guide-pending-result";
+
+function logGuideEvent(guideId: string, eventType: "started" | "completed") {
+  void fetch("/api/guide-events", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ guideId, eventType }),
+  }).catch(() => undefined);
+}
 
 function Mark({ small = false }: { small?: boolean }) {
   return (
@@ -60,6 +69,7 @@ export default function HeartGuideClient({
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<string[]>(["", "", "", ""]);
   const [finished, setFinished] = useState(false);
+  const [awaitingAuth, setAwaitingAuth] = useState(false);
   const [notice, setNotice] = useState("");
   const [messageStage, setMessageStage] = useState<"intro" | "message" | "details" | "report">("intro");
   const [currentMessage, setCurrentMessage] = useState("");
@@ -88,6 +98,29 @@ export default function HeartGuideClient({
       .finally(() => setJourneysLoading(false));
   }, [user]);
 
+  useEffect(() => {
+    if (!user) return;
+    const raw = window.localStorage.getItem(PENDING_RESULT_KEY);
+    if (!raw) return;
+    window.localStorage.removeItem(PENDING_RESULT_KEY);
+    try {
+      const pending = JSON.parse(raw) as { guideId?: string; answers?: string[] };
+      const guide = guides.find((item) => item.id === pending.guideId);
+      if (!guide || !Array.isArray(pending.answers) || pending.answers.length !== 4) return;
+      setActiveGuideId(guide.id);
+      setActiveJourneyId(null);
+      setAnswers(pending.answers);
+      setStep(3);
+      setFinished(true);
+      setAwaitingAuth(false);
+      navigate("journey");
+      void saveJourney(3, true, pending.answers, guide.id);
+    } catch {
+      // ignore malformed pending result
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
   const filtered = useMemo(
     () => guides.filter((guide) => {
       const matchesCategory = category === "All" || guide.category === category;
@@ -112,27 +145,24 @@ export default function HeartGuideClient({
   }
 
   function canOpenGuide(id: string) {
-    if (!user) {
-      window.location.assign("/sign-in?next=/");
-      return false;
-    }
     return guides.some((guide) => guide.id === id);
   }
 
   function startGuide(id: string) {
-    if (!guides.some((guide) => guide.id === id)) {
+    if (!canOpenGuide(id)) {
       setNotice("This guide is being lovingly prepared.");
       return;
     }
-    if (!canOpenGuide(id)) return;
     setActiveGuideId(id);
     const saved = savedJourneys.find((journey) => journey.guideId === id && !journey.completed);
     setActiveJourneyId(saved?.id ?? null);
     setStep(saved?.currentStep ?? 0);
     setAnswers(saved?.answers?.length === 4 ? saved.answers : ["", "", "", ""]);
     setFinished(saved?.completed ?? false);
+    setAwaitingAuth(false);
     setSaveState(saved ? "saved" : "idle");
     navigate("journey");
+    logGuideEvent(id, "started");
   }
 
   function openSavedJourney(journey: SavedJourney) {
@@ -142,6 +172,7 @@ export default function HeartGuideClient({
     setStep(journey.currentStep);
     setAnswers(journey.answers?.length === 4 ? journey.answers : ["", "", "", ""]);
     setFinished(journey.completed);
+    setAwaitingAuth(false);
     setSaveState("saved");
     navigate("journey");
   }
@@ -153,8 +184,10 @@ export default function HeartGuideClient({
     setStep(0);
     setAnswers(["", "", "", ""]);
     setFinished(false);
+    setAwaitingAuth(false);
     setSaveState("idle");
     navigate("journey");
+    logGuideEvent(id, "started");
   }
 
   function startMessageScore() {
@@ -224,20 +257,22 @@ export default function HeartGuideClient({
     }
   }
 
-  async function saveJourney(nextStep: number, isCompleted: boolean) {
+  async function saveJourney(nextStep: number, isCompleted: boolean, answersOverride?: string[], guideIdOverride?: string) {
     if (!user) return;
+    const guideId = guideIdOverride ?? activeGuideId;
+    const payloadAnswers = answersOverride ?? answers;
     setSaveState("saving");
     try {
       const response = await fetch("/api/journeys", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ journeyId: activeJourneyId, guideId: activeGuideId, answers, currentStep: nextStep, completed: isCompleted }),
+        body: JSON.stringify({ journeyId: activeJourneyId, guideId, answers: payloadAnswers, currentStep: nextStep, completed: isCompleted }),
       });
       if (!response.ok) throw new Error("Unable to save");
       const result = (await response.json()) as { journeyId: string; createdAt: string; updatedAt: string };
       setActiveJourneyId(result.journeyId);
       setSavedJourneys((current) => [
-        { id: result.journeyId, guideId: activeGuideId!, answers, currentStep: nextStep, completed: isCompleted, createdAt: current.find((journey) => journey.id === result.journeyId)?.createdAt ?? result.createdAt, updatedAt: result.updatedAt },
+        { id: result.journeyId, guideId: guideId!, answers: payloadAnswers, currentStep: nextStep, completed: isCompleted, createdAt: current.find((journey) => journey.id === result.journeyId)?.createdAt ?? result.createdAt, updatedAt: result.updatedAt },
         ...current.filter((journey) => journey.id !== result.journeyId),
       ]);
       setSaveState("saved");
@@ -249,6 +284,13 @@ export default function HeartGuideClient({
   function continueJourney() {
     if (!answers[step].trim()) return;
     if (step === journeySteps.length - 1) {
+      logGuideEvent(activeGuideId!, "completed");
+      if (!user) {
+        window.localStorage.setItem(PENDING_RESULT_KEY, JSON.stringify({ guideId: activeGuideId, answers }));
+        setAwaitingAuth(true);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
       setFinished(true);
       void saveJourney(step, true);
     } else {
@@ -416,7 +458,18 @@ export default function HeartGuideClient({
             <p className="privacy-note">Your reflections belong to you. Share only what feels right.</p>
           </aside>
           <section className="conversation">
-            {!finished ? (
+            {awaitingAuth ? (
+              <div className="result-card">
+                <div className="result-mark">✦</div>
+                <p className="eyebrow">Your {activeGuide.title} reflection</p>
+                <h2>Your reflection is ready.</h2>
+                <p className="result-note">Sign in or create a free account to see your personalised result and save it privately to My Journey.</p>
+                <div className="actions">
+                  <a className="button primary" href="/sign-in?next=/">Sign in <span>→</span></a>
+                  <a className="button secondary" href="/sign-up">Create free account <span>→</span></a>
+                </div>
+              </div>
+            ) : !finished ? (
               <div className="conversation-card">
                 <div className="guide-avatar"><Mark small /></div>
                 <p className="step-label">Step {step + 1} of {journeySteps.length} · {journeySteps[step].label}</p>

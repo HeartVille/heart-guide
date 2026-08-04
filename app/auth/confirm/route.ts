@@ -1,6 +1,7 @@
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { notifyNewSignup } from "@/lib/notify";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -12,13 +13,15 @@ export async function GET(request: Request) {
   const supabase = await createClient();
 
   if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      await notifyNewSignup(data.user?.email, data.user?.user_metadata?.full_name as string | undefined);
       redirect(next);
     }
   } else if (tokenHash && type) {
-    const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
+    const { data, error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
     if (!error) {
+      await notifyNewSignup(data.user?.email, data.user?.user_metadata?.full_name as string | undefined);
       redirect(next);
     }
   }

@@ -25,6 +25,19 @@ export default async function CreatorPage() {
       .order("created_at", { ascending: false }),
   ]);
 
+  const guideIds = (guides ?? []).map((guide) => guide.id);
+  const { data: events } = guideIds.length
+    ? await supabase.from("guide_events").select("guide_id, event_type").in("guide_id", guideIds)
+    : { data: [] as { guide_id: string; event_type: string }[] };
+
+  const countsByGuide = new Map<string, { started: number; completed: number }>();
+  for (const event of events ?? []) {
+    const current = countsByGuide.get(event.guide_id) ?? { started: 0, completed: 0 };
+    if (event.event_type === "started") current.started += 1;
+    if (event.event_type === "completed") current.completed += 1;
+    countsByGuide.set(event.guide_id, current);
+  }
+
   return (
     <main className="creator-page single-column">
       <section className="dashboard">
@@ -82,12 +95,14 @@ export default async function CreatorPage() {
           </section>
         ) : (
           <section className="panel">
-            {guides.map((guide) => (
+            {guides.map((guide) => {
+              const counts = countsByGuide.get(guide.id) ?? { started: 0, completed: 0 };
+              return (
               <div className="guide-row" key={guide.id}>
                 <span className={`mini-icon ${guide.colour}`}>{guide.symbol}</span>
                 <div>
                   <strong>{guide.title}</strong>
-                  <small>{guide.category} · {guide.status === "published" ? "Published" : "Draft"}</small>
+                  <small>{guide.category} · {guide.status === "published" ? "Published" : "Draft"} · {counts.started} started, {counts.completed} completed</small>
                 </div>
                 <Link className="text-button" href={`/creator/guides/${guide.id}`}>Edit</Link>
                 <form action={setGuideStatus.bind(null, guide.id, guide.status === "published" ? "draft" : "published")}>
@@ -97,7 +112,8 @@ export default async function CreatorPage() {
                   <button className="text-button" type="submit">Delete</button>
                 </form>
               </div>
-            ))}
+              );
+            })}
           </section>
         )}
       </section>

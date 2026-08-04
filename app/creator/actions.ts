@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { notifyNewCreator } from "@/lib/notify";
 
 const CATEGORIES = ["Relationships", "Business", "Wellbeing"] as const;
 const COLOURS = ["jade", "violet", "aqua", "gold", "rose", "sage"] as const;
@@ -29,6 +30,12 @@ export async function saveProfile(formData: FormData) {
     redirect(`/creator/profile?error=${encodeURIComponent("Please enter a display name.")}`);
   }
 
+  const { data: existingProfile } = await supabase
+    .from("creator_profiles")
+    .select("user_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
   const { error } = await supabase.from("creator_profiles").upsert({
     user_id: user.id,
     display_name: displayName,
@@ -43,6 +50,10 @@ export async function saveProfile(formData: FormData) {
 
   if (error) {
     redirect(`/creator/profile?error=${encodeURIComponent("Unable to save your profile.")}`);
+  }
+
+  if (!existingProfile) {
+    await notifyNewCreator(user.email, displayName);
   }
 
   redirect("/creator");
