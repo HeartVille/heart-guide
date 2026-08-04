@@ -310,7 +310,6 @@ export default function HeartGuideClient({
         <nav aria-label="Main navigation">
           <button className={view === "library" ? "active" : ""} onClick={() => navigate("library")}>Explore Guides</button>
           <button className={view === "my-journey" ? "active" : ""} onClick={openMyJourney}>My Journey</button>
-          <button className={view === "membership" ? "active" : ""} onClick={() => navigate("membership")}>Founder Access</button>
           <a href="/creator">For Creators</a>
         </nav>
         <button className={`profile ${user ? "signed-in" : ""}`} onClick={() => user ? setProfileOpen((open) => !open) : window.location.assign("/sign-in?next=/")} aria-label={user ? "Open member profile" : "Sign in"}>
