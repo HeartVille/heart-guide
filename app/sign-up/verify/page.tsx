@@ -15,7 +15,7 @@ export default async function VerifyEmailPage({
       <div className="auth-card">
         <span className="guide-icon" style={{ margin: "0 auto" }}>✦</span>
         <h1>Check your email</h1>
-        <p>We sent a 6-digit code to {email}. Enter it below to finish creating your account.</p>
+        <p>We sent a code to {email}. Enter it below to finish creating your account.</p>
         <form className="auth-form" action={verifySignupOtp}>
           <input type="hidden" name="email" value={email} />
           <label>
@@ -24,9 +24,9 @@ export default async function VerifyEmailPage({
               type="text"
               name="token"
               inputMode="numeric"
-              pattern="[0-9]{6}"
-              maxLength={6}
-              placeholder="123456"
+              pattern="[0-9]{8}"
+              maxLength={8}
+              placeholder="12345678"
               required
               autoFocus
             />
