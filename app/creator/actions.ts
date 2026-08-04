@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { notifyNewCreator } from "@/lib/notify";
+import { canPublishGuides } from "@/lib/membership";
 
 const CATEGORIES = ["Relationships", "Business", "Wellbeing"] as const;
 const COLOURS = ["jade", "violet", "aqua", "gold", "rose", "sage"] as const;
@@ -130,7 +131,12 @@ export async function updateGuide(guideId: string, formData: FormData) {
 }
 
 export async function setGuideStatus(guideId: string, status: "draft" | "published") {
-  const { supabase } = await requireUser();
+  const { supabase, user } = await requireUser();
+
+  if (status === "published" && !(await canPublishGuides(supabase, user.id))) {
+    redirect(`/creator/guides/${guideId}?error=${encodeURIComponent("Start your free 30-day trial to publish this guide.")}`);
+  }
+
   await supabase
     .from("guides")
     .update({ status, updated_at: new Date().toISOString() })

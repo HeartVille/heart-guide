@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { FOUNDER_CHECKOUT_URL } from "@/lib/founder-checkout";
 
 type View = "home" | "library" | "journey" | "my-journey" | "message-score" | "membership";
 type Category = "All" | "Relationships" | "Business" | "Wellbeing";
@@ -35,7 +36,6 @@ type SavedJourney = {
   updatedAt: string;
 };
 
-const FOUNDER_CHECKOUT_URL = "https://links.heartville.org/payment-link/6a622ebe7b99151a54040194";
 const PENDING_RESULT_KEY = "heart-guide-pending-result";
 
 function logGuideEvent(guideId: string, eventType: "started" | "completed") {
