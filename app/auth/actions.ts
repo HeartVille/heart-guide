@@ -1,28 +1,19 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-
-function siteOrigin(requestHeaders: Headers) {
-  return (
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    `https://${requestHeaders.get("host")}`
-  );
-}
+import { notifyNewSignup } from "@/lib/notify";
 
 export async function signUp(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const fullName = String(formData.get("name") ?? "").trim();
-  const requestHeaders = await headers();
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      emailRedirectTo: `${siteOrigin(requestHeaders)}/auth/confirm`,
       data: fullName ? { full_name: fullName } : undefined,
     },
   });
@@ -31,7 +22,31 @@ export async function signUp(formData: FormData) {
     redirect(`/sign-up?error=${encodeURIComponent(error.message)}`);
   }
 
-  redirect("/sign-up?checkEmail=1");
+  redirect(`/sign-up/verify?email=${encodeURIComponent(email)}`);
+}
+
+export async function verifySignupOtp(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim();
+  const token = String(formData.get("token") ?? "").trim();
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.verifyOtp({ email, token, type: "signup" });
+
+  if (error) {
+    redirect(`/sign-up/verify?email=${encodeURIComponent(email)}&error=${encodeURIComponent(error.message)}`);
+  }
+
+  await notifyNewSignup(data.user?.email, data.user?.user_metadata?.full_name as string | undefined);
+  redirect("/");
+}
+
+export async function resendSignupOtp(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim();
+
+  const supabase = await createClient();
+  await supabase.auth.resend({ type: "signup", email });
+
+  redirect(`/sign-up/verify?email=${encodeURIComponent(email)}&sent=1`);
 }
 
 export async function signIn(formData: FormData) {
