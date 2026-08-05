@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { signIn } from "@/app/auth/actions";
+import SiteHeader from "@/components/site-header";
 
 export default async function SignInPage({
   searchParams,
@@ -9,6 +10,8 @@ export default async function SignInPage({
   const { error, next } = await searchParams;
 
   return (
+    <>
+    <SiteHeader />
     <main className="auth-page">
       <div className="auth-card">
         <span className="guide-icon" style={{ margin: "0 auto" }}>✦</span>
@@ -34,5 +37,6 @@ export default async function SignInPage({
         </p>
       </div>
     </main>
+    </>
   );
 }

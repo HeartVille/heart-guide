@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { hasFounderAccess } from "@/lib/membership";
+import SiteHeader from "@/components/site-header";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,8 @@ export default async function PaymentSuccessPage() {
   const active = user?.email ? await hasFounderAccess(supabase, user.email) : false;
 
   return (
+    <>
+    <SiteHeader />
     <main className="payment-success-page">
       <section className="payment-success-card">
         <span className="result-mark" aria-hidden="true">✦</span>
@@ -33,5 +36,6 @@ export default async function PaymentSuccessPage() {
         </Link>
       </section>
     </main>
+    </>
   );
 }

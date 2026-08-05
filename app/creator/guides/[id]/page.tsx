@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { canPublishGuides } from "@/lib/membership";
 import { FOUNDER_CHECKOUT_URL } from "@/lib/founder-checkout";
+import SiteHeader from "@/components/site-header";
 import { deleteGuide, setGuideStatus, updateGuide } from "../../actions";
 import GuideForm from "../../guide-form";
 
@@ -35,6 +36,8 @@ export default async function EditGuidePage({
   const canPublish = await canPublishGuides(supabase, user.id);
 
   return (
+    <>
+    <SiteHeader />
     <main className="auth-page">
       <div className="auth-card creator-form-card">
         <p className="eyebrow" style={{ textAlign: "center" }}>Creator Studio</p>
@@ -71,5 +74,6 @@ export default async function EditGuidePage({
         </div>
       </div>
     </main>
+    </>
   );
 }

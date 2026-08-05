@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import SiteHeader from "@/components/site-header";
 import { createGuide } from "../../actions";
 import GuideForm from "../../guide-form";
 
@@ -25,6 +26,8 @@ export default async function NewGuidePage({
   if (!profile) redirect("/creator/profile");
 
   return (
+    <>
+    <SiteHeader />
     <main className="auth-page">
       <div className="auth-card creator-form-card">
         <p className="eyebrow" style={{ textAlign: "center" }}>Creator Studio</p>
@@ -34,5 +37,6 @@ export default async function NewGuidePage({
         {error && <p className="auth-error">{error}</p>}
       </div>
     </main>
+    </>
   );
 }

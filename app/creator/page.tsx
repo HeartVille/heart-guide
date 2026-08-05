@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { canPublishGuides } from "@/lib/membership";
+import SiteHeader from "@/components/site-header";
 import { deleteGuide, setGuideStatus } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -43,6 +44,8 @@ export default async function CreatorPage() {
   }
 
   return (
+    <>
+    <SiteHeader />
     <main className="creator-page single-column">
       <section className="dashboard">
         <div className="dashboard-head">
@@ -135,5 +138,6 @@ export default async function CreatorPage() {
         )}
       </section>
     </main>
+    </>
   );
 }

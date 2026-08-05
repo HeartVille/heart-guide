@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { verifySignupOtp, resendSignupOtp } from "@/app/auth/actions";
+import SiteHeader from "@/components/site-header";
 
 export default async function VerifyEmailPage({
   searchParams,
@@ -11,6 +12,8 @@ export default async function VerifyEmailPage({
   if (!email) redirect("/sign-up");
 
   return (
+    <>
+    <SiteHeader />
     <main className="auth-page">
       <div className="auth-card">
         <span className="guide-icon" style={{ margin: "0 auto" }}>✦</span>
@@ -46,5 +49,6 @@ export default async function VerifyEmailPage({
         </p>
       </div>
     </main>
+    </>
   );
 }

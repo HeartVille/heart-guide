@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import SiteHeader from "@/components/site-header";
 import { saveProfile } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -23,6 +24,8 @@ export default async function CreatorProfilePage({
     .maybeSingle();
 
   return (
+    <>
+    <SiteHeader />
     <main className="auth-page">
       <div className="auth-card creator-form-card">
         <span className="guide-icon" style={{ margin: "0 auto" }}>✦</span>
@@ -62,5 +65,6 @@ export default async function CreatorProfilePage({
         {error && <p className="auth-error">{error}</p>}
       </div>
     </main>
+    </>
   );
 }
