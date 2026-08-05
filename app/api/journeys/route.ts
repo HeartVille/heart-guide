@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { notifyGuideCompleted } from "@/lib/notify";
 
 export async function GET() {
   const supabase = await createClient();
@@ -49,13 +50,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid journey." }, { status: 400 });
   }
 
-  const { data: guideExists } = await supabase
+  const { data: guide } = await supabase
     .from("guides")
-    .select("id")
+    .select("id, title, category, questions")
     .eq("id", body.guideId)
     .maybeSingle();
 
-  if (!guideExists) {
+  if (!guide) {
     return NextResponse.json({ error: "Invalid journey." }, { status: 400 });
   }
 
@@ -64,6 +65,29 @@ export async function POST(request: Request) {
   const currentStep = Math.max(0, Math.min(3, Number(body.currentStep) || 0));
   const completed = Boolean(body.completed);
   const updatedAt = new Date().toISOString();
+
+  let alreadyCompleted = false;
+  if (body.journeyId) {
+    const { data: existing } = await supabase
+      .from("guide_journey_entries")
+      .select("completed")
+      .eq("id", body.journeyId)
+      .maybeSingle();
+    alreadyCompleted = existing?.completed === true;
+  }
+
+  async function notifyIfNewlyCompleted() {
+    if (!completed || alreadyCompleted) return;
+    const questions = (guide!.questions ?? []) as { question: string }[];
+    const qa = answers.map((answer, index) => ({ question: questions[index]?.question ?? `Question ${index + 1}`, answer }));
+    await notifyGuideCompleted(
+      user!.email,
+      user!.user_metadata?.full_name as string | undefined,
+      guide!.title,
+      guide!.category,
+      qa,
+    );
+  }
 
   if (body.journeyId) {
     const { data, error } = await supabase
@@ -77,6 +101,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unable to save." }, { status: 500 });
     }
 
+    await notifyIfNewlyCompleted();
     return NextResponse.json({ journeyId: data.id, createdAt: data.created_at, updatedAt: data.updated_at });
   }
 
@@ -97,5 +122,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unable to save." }, { status: 500 });
   }
 
+  await notifyIfNewlyCompleted();
   return NextResponse.json({ journeyId: data.id, createdAt: data.created_at, updatedAt: data.updated_at });
 }

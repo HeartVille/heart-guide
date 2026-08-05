@@ -60,6 +60,34 @@ export async function notifyMessageScoreLead(
   );
 }
 
+export async function notifyGuideCompleted(
+  email: string | null | undefined,
+  fullName: string | null | undefined,
+  guideTitle: string,
+  guideCategory: string,
+  qa: { question: string; answer: string }[],
+) {
+  const { trimmedName, firstName, lastName } = splitName(fullName);
+
+  await Promise.all([
+    notifyAdmin(
+      `New Heart Guide completed: ${guideTitle}`,
+      `${trimmedName || "(no name given)"} just completed "${guideTitle}".\n\nEmail: ${email ?? "unknown"}\nCategory: ${guideCategory}`,
+    ),
+    notifyGHL({
+      event: "guide_completed",
+      source: "Heart Guide",
+      first_name: firstName,
+      last_name: lastName,
+      email: email ?? "",
+      guide_title: guideTitle,
+      guide_category: guideCategory,
+      answers: qa,
+      completed_at: new Date().toISOString(),
+    }),
+  ]);
+}
+
 export async function notifyNewCreator(email: string | null | undefined, displayName: string) {
   const { firstName, lastName } = splitName(displayName);
 
