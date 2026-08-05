@@ -58,12 +58,14 @@ export default function HeartGuideClient({
   user,
   founderAccess,
   guides,
+  initialView = "home",
 }: {
   user: SignedInUser | null;
   founderAccess: boolean;
   guides: Guide[];
+  initialView?: View;
 }) {
-  const [view, setView] = useState<View>("home");
+  const [view, setView] = useState<View>(initialView);
   const [category, setCategory] = useState<Category>("All");
   const [search, setSearch] = useState("");
   const [step, setStep] = useState(0);
@@ -130,19 +132,36 @@ export default function HeartGuideClient({
     [category, search],
   );
 
+  const routeForView: Partial<Record<View, string>> = { home: "/", library: "/explore", "my-journey": "/my-journey" };
+
   function navigate(next: View) {
     setView(next);
     setNotice("");
     window.scrollTo({ top: 0, behavior: "smooth" });
+    const path = routeForView[next];
+    if (path && window.location.pathname !== path) {
+      window.history.pushState({}, "", path);
+    }
   }
 
   function openMyJourney() {
     if (!user) {
-      window.location.assign("/sign-in?next=/");
+      window.location.assign("/sign-in?next=/my-journey");
       return;
     }
     navigate("my-journey");
   }
+
+  useEffect(() => {
+    function handlePopState() {
+      const path = window.location.pathname;
+      if (path === "/explore") setView("library");
+      else if (path === "/my-journey") setView(user ? "my-journey" : "home");
+      else setView("home");
+    }
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [user]);
 
   function canOpenGuide(id: string) {
     return guides.some((guide) => guide.id === id);

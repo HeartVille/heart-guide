@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { notifyMessageScoreLead } from "@/lib/notify";
 
 type LeadPayload = {
   firstName?: string;
@@ -18,6 +19,10 @@ export async function POST(request: Request) {
   const body = (await request.json()) as LeadPayload;
   if (!body.consent || !body.firstName || !body.email?.includes("@") || !body.message) {
     return NextResponse.json({ error: "Valid consented contact details are required." }, { status: 400 });
+  }
+
+  if (body.stage === "Message Score Completed") {
+    await notifyMessageScoreLead(body.email, body.firstName, body.totalScore);
   }
 
   const webhookUrl = process.env.GHL_MESSAGE_SCORE_WEBHOOK_URL;

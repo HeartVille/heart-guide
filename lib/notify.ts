@@ -44,6 +44,17 @@ export async function notifyNewSignup(email: string | null | undefined, fullName
   ]);
 }
 
+export async function notifyMessageScoreLead(
+  email: string | null | undefined,
+  firstName: string | null | undefined,
+  totalScore: number | null | undefined,
+) {
+  await notifyAdmin(
+    "New Soul-Aligned Message Score lead",
+    `${firstName?.trim() || "(no name given)"} just completed the Message Score.\n\nEmail: ${email ?? "unknown"}\nScore: ${totalScore ?? "unknown"}/100`,
+  );
+}
+
 export async function notifyNewCreator(email: string | null | undefined, displayName: string) {
   await Promise.all([
     notifyAdmin(
