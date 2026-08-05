@@ -24,9 +24,14 @@ async function notifyGHL(payload: Record<string, unknown>) {
   }
 }
 
-export async function notifyNewSignup(email: string | null | undefined, fullName: string | null | undefined) {
+function splitName(fullName: string | null | undefined) {
   const trimmedName = fullName?.trim() ?? "";
   const [firstName = "", ...rest] = trimmedName ? trimmedName.split(" ") : [];
+  return { trimmedName, firstName, lastName: rest.join(" ") };
+}
+
+export async function notifyNewSignup(email: string | null | undefined, fullName: string | null | undefined) {
+  const { trimmedName, firstName, lastName } = splitName(fullName);
 
   await Promise.all([
     notifyAdmin(
@@ -37,7 +42,7 @@ export async function notifyNewSignup(email: string | null | undefined, fullName
       event: "new_signup",
       source: "Heart Guide",
       first_name: firstName,
-      last_name: rest.join(" "),
+      last_name: lastName,
       email: email ?? "",
       signed_up_at: new Date().toISOString(),
     }),
@@ -56,6 +61,8 @@ export async function notifyMessageScoreLead(
 }
 
 export async function notifyNewCreator(email: string | null | undefined, displayName: string) {
+  const { firstName, lastName } = splitName(displayName);
+
   await Promise.all([
     notifyAdmin(
       "New Heart Guide creator",
@@ -65,6 +72,8 @@ export async function notifyNewCreator(email: string | null | undefined, display
       event: "new_creator",
       source: "Heart Guide",
       display_name: displayName,
+      first_name: firstName,
+      last_name: lastName,
       email: email ?? "",
       signed_up_at: new Date().toISOString(),
     }),
