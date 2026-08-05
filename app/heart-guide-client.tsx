@@ -346,6 +346,17 @@ export default function HeartGuideClient({
               <img src="/luminous-heart.png" alt="" />
             </div>
           </section>
+          <section className="message-score-spotlight">
+            <button className="spotlight-card" onClick={startMessageScore}>
+              <span className="spotlight-icon" aria-hidden="true">✦</span>
+              <span className="spotlight-copy">
+                <small>Free tool</small>
+                <strong>Soul-Aligned Message Score</strong>
+                <p>Paste a message you're about to send and see where it already connects — and where a small shift could help the right people recognise themselves in it.</p>
+              </span>
+              <b>Score my message →</b>
+            </button>
+          </section>
           <section className="featured" aria-label="Featured Heart Guides">
             {guides.slice(0, 3).map((guide) => (
               <button className={`feature-card ${guide.colour}`} key={guide.id} onClick={() => startGuide(guide.id)}>
@@ -383,6 +394,17 @@ export default function HeartGuideClient({
             </div>
           </section>
           <section className="guide-grid">
+            {category === "All" && !search.trim() && (
+              <article className="guide-card message-score-card">
+                <div className="guide-art gold"><span>✦</span><i /><b /></div>
+                <div className="guide-content">
+                  <div className="guide-meta"><span>Free tool</span><span>Free</span></div>
+                  <h2>Soul-Aligned Message Score</h2>
+                  <p>Paste a message you're about to send and see where it already connects — and where a small shift could help it land.</p>
+                  <div className="guide-footer"><small>2–3 min</small><button onClick={startMessageScore}>Score my message →</button></div>
+                </div>
+              </article>
+            )}
             {filtered.map((guide) => (
               <article className="guide-card" key={guide.id}>
                 <div className={`guide-art ${guide.colour}`}><span>{guide.symbol}</span><i /><b /></div>
