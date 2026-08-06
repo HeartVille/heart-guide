@@ -81,6 +81,7 @@ export default function HeartGuideClient({
   const [submissionState, setSubmissionState] = useState<"idle" | "sending" | "saved" | "offline">("idle");
   const [activeGuideId, setActiveGuideId] = useState<string | null>(guides[0]?.id ?? null);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [savedJourneys, setSavedJourneys] = useState<SavedJourney[]>([]);
   const [activeJourneyId, setActiveJourneyId] = useState<string | null>(null);
   const [journeysLoading, setJourneysLoading] = useState(Boolean(user));
@@ -137,6 +138,7 @@ export default function HeartGuideClient({
   function navigate(next: View) {
     setView(next);
     setNotice("");
+    setMobileMenuOpen(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
     const path = routeForView[next];
     if (path && window.location.pathname !== path) {
@@ -331,6 +333,16 @@ export default function HeartGuideClient({
           <button className={view === "my-journey" ? "active" : ""} onClick={openMyJourney}>My Journey</button>
           <a href="/creator">For Creators</a>
         </nav>
+        <button
+          className="mobile-menu-toggle"
+          onClick={() => setMobileMenuOpen((open) => !open)}
+          aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+          aria-expanded={mobileMenuOpen}
+        >
+          <span />
+          <span />
+          <span />
+        </button>
         <button className={`profile ${user ? "signed-in" : ""}`} onClick={() => user ? setProfileOpen((open) => !open) : window.location.assign("/sign-in?next=/")} aria-label={user ? "Open member profile" : "Sign in"}>
           <span className="profile-head" />
           <span className="profile-body" />
@@ -343,6 +355,13 @@ export default function HeartGuideClient({
             <button onClick={openMyJourney}>My Journey</button>
             <a href="/auth/sign-out">Sign out</a>
           </div>
+        )}
+        {mobileMenuOpen && (
+          <nav className="mobile-nav" aria-label="Mobile navigation">
+            <button className={view === "library" ? "active" : ""} onClick={() => navigate("library")}>Explore Guides</button>
+            <button className={view === "my-journey" ? "active" : ""} onClick={openMyJourney}>My Journey</button>
+            <a href="/creator">For Creators</a>
+          </nav>
         )}
       </header>
 
