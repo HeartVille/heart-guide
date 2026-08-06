@@ -2,7 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { notifyNewCreator } from "@/lib/notify";
+import { notifyNewCreator, notifyGuidePublished } from "@/lib/notify";
+import { siteOrigin } from "@/lib/site";
 
 const CATEGORIES = ["Relationships", "Business", "Wellbeing"] as const;
 const COLOURS = ["jade", "violet", "aqua", "gold", "rose", "sage"] as const;
@@ -130,12 +131,24 @@ export async function updateGuide(guideId: string, formData: FormData) {
 }
 
 export async function setGuideStatus(guideId: string, status: "draft" | "published") {
-  const { supabase } = await requireUser();
+  const { supabase, user } = await requireUser();
 
   await supabase
     .from("guides")
     .update({ status, updated_at: new Date().toISOString() })
     .eq("id", guideId);
+
+  if (status === "published") {
+    const [{ data: guide }, { data: profile }] = await Promise.all([
+      supabase.from("guides").select("title").eq("id", guideId).maybeSingle(),
+      supabase.from("creator_profiles").select("display_name").eq("user_id", user.id).maybeSingle(),
+    ]);
+    if (guide) {
+      const origin = await siteOrigin();
+      await notifyGuidePublished(user.email, profile?.display_name, guide.title, `${origin}/guides/${guideId}`);
+    }
+  }
+
   redirect("/creator");
 }
 

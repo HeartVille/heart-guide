@@ -88,6 +88,33 @@ export async function notifyGuideCompleted(
   ]);
 }
 
+export async function notifyGuidePublished(
+  email: string | null | undefined,
+  displayName: string | null | undefined,
+  guideTitle: string,
+  guideUrl: string,
+) {
+  const { firstName, lastName } = splitName(displayName);
+
+  await Promise.all([
+    notifyAdmin(
+      `Guide published: ${guideTitle}`,
+      `${displayName || "A creator"} just published "${guideTitle}".\n\nCreator email: ${email ?? "unknown"}\nLink: ${guideUrl}`,
+    ),
+    notifyGHL({
+      event: "guide_published",
+      source: "Heart Guide",
+      first_name: firstName,
+      last_name: lastName,
+      email: email ?? "",
+      display_name: displayName ?? "",
+      guide_title: guideTitle,
+      guide_url: guideUrl,
+      published_at: new Date().toISOString(),
+    }),
+  ]);
+}
+
 export async function notifyNewCreator(email: string | null | undefined, displayName: string) {
   const { firstName, lastName } = splitName(displayName);
 

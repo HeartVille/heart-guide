@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { siteOrigin } from "@/lib/site";
 import SiteHeader from "@/components/site-header";
 import { deleteGuide, setGuideStatus, updateGuide } from "../../actions";
 import GuideForm from "../../guide-form";
@@ -31,6 +32,8 @@ export default async function EditGuidePage({
     redirect("/creator");
   }
 
+  const shareUrl = guide.status === "published" ? `${await siteOrigin()}/guides/${guide.id}` : null;
+
   return (
     <>
     <SiteHeader />
@@ -39,6 +42,11 @@ export default async function EditGuidePage({
         <p className="eyebrow" style={{ textAlign: "center" }}>Creator Studio</p>
         <h1>Edit Heart Guide</h1>
         <p>This guide is currently <strong>{guide.status === "published" ? "published" : "a draft"}</strong>.</p>
+        {shareUrl && (
+          <p style={{ textAlign: "center", fontSize: 13, color: "var(--muted)" }}>
+            Share this link: <a href={shareUrl}>{shareUrl}</a>
+          </p>
+        )}
         <GuideForm action={updateGuide.bind(null, guide.id)} submitLabel="Save changes" initial={guide} />
         {error && <p className="auth-error">{error}</p>}
 

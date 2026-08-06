@@ -59,11 +59,13 @@ export default function HeartGuideClient({
   founderAccess,
   guides,
   initialView = "home",
+  initialGuideId,
 }: {
   user: SignedInUser | null;
   founderAccess: boolean;
   guides: Guide[];
   initialView?: View;
+  initialGuideId?: string;
 }) {
   const [view, setView] = useState<View>(initialView);
   const [category, setCategory] = useState<Category>("All");
@@ -79,7 +81,7 @@ export default function HeartGuideClient({
   const [email, setEmail] = useState("");
   const [consent, setConsent] = useState(false);
   const [submissionState, setSubmissionState] = useState<"idle" | "sending" | "saved" | "offline">("idle");
-  const [activeGuideId, setActiveGuideId] = useState<string | null>(guides[0]?.id ?? null);
+  const [activeGuideId, setActiveGuideId] = useState<string | null>(initialGuideId ?? guides[0]?.id ?? null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [savedJourneys, setSavedJourneys] = useState<SavedJourney[]>([]);
@@ -88,6 +90,11 @@ export default function HeartGuideClient({
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const activeGuide = guides.find((guide) => guide.id === activeGuideId) ?? null;
   const journeySteps = activeGuide?.questions ?? [];
+
+  useEffect(() => {
+    if (initialGuideId) logGuideEvent(initialGuideId, "started");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!user) return;
