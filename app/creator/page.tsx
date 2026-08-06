@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { canPublishGuides } from "@/lib/membership";
 import SiteHeader from "@/components/site-header";
 import { deleteGuide, setGuideStatus } from "./actions";
 
@@ -28,12 +27,9 @@ export default async function CreatorPage() {
   ]);
 
   const guideIds = (guides ?? []).map((guide) => guide.id);
-  const [{ data: events }, canPublish] = await Promise.all([
-    guideIds.length
-      ? supabase.from("guide_events").select("guide_id, event_type").in("guide_id", guideIds)
-      : Promise.resolve({ data: [] as { guide_id: string; event_type: string }[] }),
-    canPublishGuides(supabase, user.id),
-  ]);
+  const { data: events } = guideIds.length
+    ? await supabase.from("guide_events").select("guide_id, event_type").in("guide_id", guideIds)
+    : { data: [] as { guide_id: string; event_type: string }[] };
 
   const countsByGuide = new Map<string, { started: number; completed: number }>();
   for (const event of events ?? []) {
@@ -104,30 +100,17 @@ export default async function CreatorPage() {
           <section className="panel">
             {guides.map((guide) => {
               const counts = countsByGuide.get(guide.id) ?? { started: 0, completed: 0 };
-              const isLive = guide.status === "published" && canPublish;
-              const isPaused = guide.status === "published" && !canPublish;
-              const statusLabel = isPaused ? "Paused (subscription inactive)" : guide.status === "published" ? "Published" : "Draft";
               return (
               <div className="guide-row" key={guide.id}>
                 <span className={`mini-icon ${guide.colour}`}>{guide.symbol}</span>
                 <div>
                   <strong>{guide.title}</strong>
-                  <small>{guide.category} · {statusLabel} · {counts.started} started, {counts.completed} completed</small>
+                  <small>{guide.category} · {guide.status === "published" ? "Published" : "Draft"} · {counts.started} started, {counts.completed} completed</small>
                 </div>
                 <Link className="text-button" href={`/creator/guides/${guide.id}`}>Edit</Link>
-                {isLive ? (
-                  <form action={setGuideStatus.bind(null, guide.id, "draft")}>
-                    <button className="text-button" type="submit">Unpublish</button>
-                  </form>
-                ) : guide.status === "draft" && canPublish ? (
-                  <form action={setGuideStatus.bind(null, guide.id, "published")}>
-                    <button className="text-button" type="submit">Publish</button>
-                  </form>
-                ) : (
-                  <Link className="text-button" href={`/creator/guides/${guide.id}`}>
-                    {isPaused ? "Reactivate" : "Publish"}
-                  </Link>
-                )}
+                <form action={setGuideStatus.bind(null, guide.id, guide.status === "published" ? "draft" : "published")}>
+                  <button className="text-button" type="submit">{guide.status === "published" ? "Unpublish" : "Publish"}</button>
+                </form>
                 <form action={deleteGuide.bind(null, guide.id)}>
                   <button className="text-button" type="submit">Delete</button>
                 </form>

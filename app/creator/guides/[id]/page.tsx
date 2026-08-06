@@ -1,7 +1,5 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { canPublishGuides } from "@/lib/membership";
-import { FOUNDER_CHECKOUT_URL } from "@/lib/founder-checkout";
 import SiteHeader from "@/components/site-header";
 import { deleteGuide, setGuideStatus, updateGuide } from "../../actions";
 import GuideForm from "../../guide-form";
@@ -33,8 +31,6 @@ export default async function EditGuidePage({
     redirect("/creator");
   }
 
-  const canPublish = await canPublishGuides(supabase, user.id);
-
   return (
     <>
     <SiteHeader />
@@ -46,28 +42,10 @@ export default async function EditGuidePage({
         <GuideForm action={updateGuide.bind(null, guide.id)} submitLabel="Save changes" initial={guide} />
         {error && <p className="auth-error">{error}</p>}
 
-        <div className="actions" style={{ justifyContent: "center", marginTop: 24, flexDirection: "column", alignItems: "center" }}>
-          {guide.status === "published" ? (
-            <form action={setGuideStatus.bind(null, guide.id, "draft")}>
-              <button className="button secondary" type="submit">Unpublish</button>
-            </form>
-          ) : canPublish ? (
-            <form action={setGuideStatus.bind(null, guide.id, "published")}>
-              <button className="button secondary" type="submit">Publish</button>
-            </form>
-          ) : (
-            <>
-              <a className="button primary" href={FOUNDER_CHECKOUT_URL}>Publish My Guide Free for 30 Days <span>→</span></a>
-              <p className="membership-note" style={{ textAlign: "center", maxWidth: 360 }}>
-                <strong>30 days free, then $19/month.</strong>
-                <br />
-                No charge today. Cancel anytime before your trial ends. Your Guide will be paused if you cancel, but your content will remain saved.
-                <br />
-                After checkout, come back here and publish — your access unlocks automatically.
-              </p>
-            </>
-          )}
-
+        <div className="actions" style={{ justifyContent: "center", marginTop: 24 }}>
+          <form action={setGuideStatus.bind(null, guide.id, guide.status === "published" ? "draft" : "published")}>
+            <button className="button secondary" type="submit">{guide.status === "published" ? "Unpublish" : "Publish"}</button>
+          </form>
           <form action={deleteGuide.bind(null, guide.id)}>
             <button className="button secondary" type="submit">Delete guide</button>
           </form>
