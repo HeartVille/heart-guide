@@ -6,7 +6,7 @@ export async function POST(request: Request) {
   const guideId = body?.guideId;
   const eventType = body?.eventType;
 
-  if (!guideId || (eventType !== "started" && eventType !== "completed")) {
+  if (!guideId || (eventType !== "started" && eventType !== "completed" && eventType !== "cta_clicked")) {
     return NextResponse.json({ error: "Invalid event." }, { status: 400 });
   }
 

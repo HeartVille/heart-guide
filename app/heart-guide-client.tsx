@@ -38,7 +38,7 @@ type SavedJourney = {
 
 const PENDING_RESULT_KEY = "heart-guide-pending-result";
 
-function logGuideEvent(guideId: string, eventType: "started" | "completed") {
+function logGuideEvent(guideId: string, eventType: "started" | "completed" | "cta_clicked") {
   void fetch("/api/guide-events", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -569,7 +569,13 @@ export default function HeartGuideClient({
                     )}
                     {activeGuide.creator.resourceUrl && (
                       <div className="actions">
-                        <a className="button primary" href={activeGuide.creator.resourceUrl} target="_blank" rel="noreferrer">
+                        <a
+                          className="button primary"
+                          href={activeGuide.creator.resourceUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={() => logGuideEvent(activeGuide.id, "cta_clicked")}
+                        >
                           {activeGuide.creator.ctaLabel || "Learn more"} <span>→</span>
                         </a>
                       </div>

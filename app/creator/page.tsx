@@ -31,13 +31,15 @@ export default async function CreatorPage() {
     ? await supabase.from("guide_events").select("guide_id, event_type").in("guide_id", guideIds)
     : { data: [] as { guide_id: string; event_type: string }[] };
 
-  const countsByGuide = new Map<string, { started: number; completed: number }>();
+  const countsByGuide = new Map<string, { started: number; completed: number; clicked: number }>();
   for (const event of events ?? []) {
-    const current = countsByGuide.get(event.guide_id) ?? { started: 0, completed: 0 };
+    const current = countsByGuide.get(event.guide_id) ?? { started: 0, completed: 0, clicked: 0 };
     if (event.event_type === "started") current.started += 1;
     if (event.event_type === "completed") current.completed += 1;
+    if (event.event_type === "cta_clicked") current.clicked += 1;
     countsByGuide.set(event.guide_id, current);
   }
+  const totalCtaClicks = [...countsByGuide.values()].reduce((sum, counts) => sum + counts.clicked, 0);
 
   return (
     <>
@@ -73,6 +75,9 @@ export default async function CreatorPage() {
                 <a href={profile.resource_url} target="_blank" rel="noreferrer">
                   {profile.resource_title || "Resource"} ↗
                 </a>
+                <small style={{ display: "block", marginTop: 6, color: "var(--muted)" }}>
+                  {totalCtaClicks} click{totalCtaClicks === 1 ? "" : "s"} on your CTA across all guides
+                </small>
               </div>
             )}
           </section>
@@ -99,13 +104,13 @@ export default async function CreatorPage() {
         ) : (
           <section className="panel">
             {guides.map((guide) => {
-              const counts = countsByGuide.get(guide.id) ?? { started: 0, completed: 0 };
+              const counts = countsByGuide.get(guide.id) ?? { started: 0, completed: 0, clicked: 0 };
               return (
               <div className="guide-row" key={guide.id}>
                 <span className={`mini-icon ${guide.colour}`}>{guide.symbol}</span>
                 <div>
                   <strong>{guide.title}</strong>
-                  <small>{guide.category} · {guide.status === "published" ? "Published" : "Draft"} · {counts.started} started, {counts.completed} completed</small>
+                  <small>{guide.category} · {guide.status === "published" ? "Published" : "Draft"} · {counts.started} started, {counts.completed} completed, {counts.clicked} CTA clicks</small>
                 </div>
                 <Link className="text-button" href={`/creator/guides/${guide.id}`}>Edit</Link>
                 <form action={setGuideStatus.bind(null, guide.id, guide.status === "published" ? "draft" : "published")}>
