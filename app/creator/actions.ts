@@ -74,13 +74,19 @@ function validGuideFields(formData: FormData) {
   const description = String(formData.get("description") ?? "").trim();
   const colour = String(formData.get("colour") ?? "jade");
   const symbol = String(formData.get("symbol") ?? "✦").trim() || "✦";
+  const resultHeading = String(formData.get("resultHeading") ?? "").trim();
+  const resultInsight = String(formData.get("resultInsight") ?? "").trim();
+  const resultPrompt = String(formData.get("resultPrompt") ?? "").trim();
   const questions = buildQuestions(formData);
 
   if (
     !title ||
     !description ||
     !(CATEGORIES as readonly string[]).includes(category) ||
-    !(COLOURS as readonly string[]).includes(colour)
+    !(COLOURS as readonly string[]).includes(colour) ||
+    !resultHeading ||
+    !resultInsight ||
+    !resultPrompt
   ) {
     return null;
   }
@@ -88,7 +94,17 @@ function validGuideFields(formData: FormData) {
     return null;
   }
 
-  return { title, category, description, colour, symbol, questions };
+  return {
+    title,
+    category,
+    description,
+    colour,
+    symbol,
+    questions,
+    result_heading: resultHeading.slice(0, 90),
+    result_insight: resultInsight.slice(0, 320),
+    result_prompt: resultPrompt.slice(0, 180),
+  };
 }
 
 export async function createGuide(formData: FormData) {

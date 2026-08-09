@@ -10,6 +10,9 @@ type GuideFormValues = {
   colour: string;
   symbol: string;
   questions: Question[];
+  resultHeading: string;
+  resultInsight: string;
+  resultPrompt: string;
 };
 
 const EMPTY_QUESTION: Question = { label: "", question: "", placeholder: "" };
@@ -20,6 +23,9 @@ const EMPTY_VALUES: GuideFormValues = {
   colour: "jade",
   symbol: "✦",
   questions: [EMPTY_QUESTION, EMPTY_QUESTION, EMPTY_QUESTION, EMPTY_QUESTION],
+  resultHeading: "A clearer direction is taking shape.",
+  resultInsight: "Your answers point to what matters most and the next step you are ready to take.",
+  resultPrompt: "What support, timing or boundary would make this feel possible?",
 };
 
 export default function GuideForm({
@@ -185,6 +191,21 @@ export default function GuideForm({
           </label>
         </fieldset>
       ))}
+
+      <h2 className="guide-form-heading">The closing reflection</h2>
+      <p className="guide-form-hint">Keep this brief. Their own answers will appear beneath your words.</p>
+      <label>
+        Result heading
+        <input name="resultHeading" value={values.resultHeading} onChange={(event) => setValues((current) => ({ ...current, resultHeading: event.target.value }))} maxLength={90} required />
+      </label>
+      <label>
+        Your guiding insight
+        <textarea name="resultInsight" value={values.resultInsight} onChange={(event) => setValues((current) => ({ ...current, resultInsight: event.target.value }))} rows={3} maxLength={320} required />
+      </label>
+      <label>
+        Closing question
+        <input name="resultPrompt" value={values.resultPrompt} onChange={(event) => setValues((current) => ({ ...current, resultPrompt: event.target.value }))} maxLength={180} required />
+      </label>
 
       <button className="button primary full-button" type="submit">{submitLabel} <span>→</span></button>
     </form>

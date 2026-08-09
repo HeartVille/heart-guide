@@ -68,6 +68,9 @@ create table if not exists public.guides (
   colour text not null default 'jade' check (colour in ('jade', 'violet', 'aqua', 'gold', 'rose', 'sage')),
   symbol text not null default '✦',
   questions jsonb not null,
+  result_heading text not null default 'A clearer direction is taking shape.',
+  result_insight text not null default 'Your answers point to what matters most and the next step you are ready to take.',
+  result_prompt text not null default 'What support, timing or boundary would make this feel possible?',
   status text not null default 'draft' check (status in ('draft', 'published')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

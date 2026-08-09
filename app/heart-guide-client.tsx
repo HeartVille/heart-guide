@@ -24,6 +24,9 @@ type Guide = {
   colour: string;
   symbol: string;
   questions: JourneyStep[];
+  resultHeading: string;
+  resultInsight: string;
+  resultPrompt: string;
   creator: Creator | null;
 };
 type SavedJourney = {
@@ -552,10 +555,13 @@ export default function HeartGuideClient({
               <div className="result-card">
                 <div className="result-mark">✦</div>
                 <p className="eyebrow">Your {activeGuide.title} reflection</p>
-                <h2>A gentle next step has emerged.</h2>
-                <p>You began by listening to what is difficult, then named the deeper longing beneath it. The action you chose is:</p>
+                <h2>{activeGuide.resultHeading}</h2>
+                <p>{activeGuide.resultInsight}</p>
+                <p className="result-label">What matters beneath this</p>
+                <blockquote>“{answers[2]}”</blockquote>
+                <p className="result-label">Your next step</p>
                 <blockquote>“{answers[3]}”</blockquote>
-                <p className="result-note">Carry this as an invitation rather than another task. Notice what support, timing or boundary would help you approach it with care.</p>
+                <p className="result-note">{activeGuide.resultPrompt}</p>
                 <div className="actions"><button className="button primary" onClick={() => window.print()}>Print my reflection</button><button className="button secondary" onClick={openMyJourney}>My Journey</button><button className="text-button" onClick={() => startNewJourney(activeGuide.id)}>Start this guide again</button></div>
                 {user && <p className={`save-status ${saveState}`}>{saveState === "saving" ? "Saving privately…" : saveState === "error" ? "Could not save just now." : "✓ Saved privately to My Journey"}</p>}
                 {activeGuide.creator && (

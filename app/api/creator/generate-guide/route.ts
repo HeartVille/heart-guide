@@ -18,6 +18,8 @@ Each step needs: a one-word label, a single reflective question (one sentence, w
 
 Also produce: a short evocative title (2-4 words, title case), a one-sentence description of who this helps and with what, a category (Relationships, Business, or Wellbeing), a colour (jade, violet, aqua, gold, rose, or sage), and a single simple line-art unicode symbol character (like ♡ ⌁ ◌ ◇ ☼ ✦ ✧ ☾) — not a colour emoji.
 
+The participant also receives a succinct closing reflection. Write a short result heading, a guiding insight of no more than two sentences that fits this specific guide, and one closing question that helps them act with care. Do not diagnose, overclaim, or repeat the same generic wording across topics.
+
 Respond only with the guide, shaped by the topic the creator gives you.`;
 
 const GUIDE_SCHEMA = {
@@ -46,8 +48,11 @@ const GUIDE_SCHEMA = {
           additionalProperties: false,
         },
       },
+      resultHeading: { type: "string" },
+      resultInsight: { type: "string" },
+      resultPrompt: { type: "string" },
     },
-    required: ["title", "category", "description", "colour", "symbol", "questions"],
+    required: ["title", "category", "description", "colour", "symbol", "questions", "resultHeading", "resultInsight", "resultPrompt"],
     additionalProperties: false,
   },
 } as const;
@@ -109,6 +114,9 @@ export async function POST(request: Request) {
     colour?: string;
     symbol?: string;
     questions?: { label: string; question: string; placeholder: string }[];
+    resultHeading?: string;
+    resultInsight?: string;
+    resultPrompt?: string;
   } | null = null;
 
   try {
@@ -133,6 +141,9 @@ export async function POST(request: Request) {
         question: question.question ?? "",
         placeholder: question.placeholder ?? "",
       })),
+      resultHeading: (parsed.resultHeading ?? "A clearer direction is taking shape.").trim().slice(0, 90),
+      resultInsight: (parsed.resultInsight ?? "Your answers point to what matters most and the next step you are ready to take.").trim().slice(0, 320),
+      resultPrompt: (parsed.resultPrompt ?? "What support, timing or boundary would make this feel possible?").trim().slice(0, 180),
     },
   });
 }

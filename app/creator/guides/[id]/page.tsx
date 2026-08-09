@@ -24,7 +24,7 @@ export default async function EditGuidePage({
 
   const { data: guide } = await supabase
     .from("guides")
-    .select("id, title, category, description, colour, symbol, questions, status, creator_id")
+    .select("id, title, category, description, colour, symbol, questions, result_heading, result_insight, result_prompt, status, creator_id")
     .eq("id", id)
     .maybeSingle();
 
@@ -47,7 +47,16 @@ export default async function EditGuidePage({
             Share this link: <a href={shareUrl}>{shareUrl}</a>
           </p>
         )}
-        <GuideForm action={updateGuide.bind(null, guide.id)} submitLabel="Save changes" initial={guide} />
+        <GuideForm
+          action={updateGuide.bind(null, guide.id)}
+          submitLabel="Save changes"
+          initial={{
+            ...guide,
+            resultHeading: guide.result_heading,
+            resultInsight: guide.result_insight,
+            resultPrompt: guide.result_prompt,
+          }}
+        />
         {error && <p className="auth-error">{error}</p>}
 
         <div className="actions" style={{ justifyContent: "center", marginTop: 24 }}>

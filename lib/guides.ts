@@ -18,6 +18,9 @@ export type Guide = {
   colour: string;
   symbol: string;
   questions: JourneyStep[];
+  resultHeading: string;
+  resultInsight: string;
+  resultPrompt: string;
   creator: Creator | null;
 };
 
@@ -29,6 +32,9 @@ type GuideRow = {
   colour: string;
   symbol: string;
   questions: JourneyStep[];
+  result_heading: string;
+  result_insight: string;
+  result_prompt: string;
   creator_id: string;
 };
 
@@ -46,7 +52,7 @@ type CreatorRow = {
 export async function getPublishedGuides(supabase: SupabaseClient): Promise<Guide[]> {
   const { data: guideRows } = await supabase
     .from("guides")
-    .select("id, title, category, description, colour, symbol, questions, creator_id")
+    .select("id, title, category, description, colour, symbol, questions, result_heading, result_insight, result_prompt, creator_id")
     .eq("status", "published")
     .order("created_at", { ascending: true });
 
@@ -76,6 +82,9 @@ export async function attachCreators(supabase: SupabaseClient, guideRows: GuideR
       colour: row.colour,
       symbol: row.symbol,
       questions: row.questions,
+      resultHeading: row.result_heading,
+      resultInsight: row.result_insight,
+      resultPrompt: row.result_prompt,
       creator: creatorRow
         ? {
             displayName: creatorRow.display_name,
