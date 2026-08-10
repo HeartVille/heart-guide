@@ -41,12 +41,26 @@ type SavedJourney = {
 };
 
 const PENDING_RESULT_KEY = "heart-guide-pending-result";
+const ANALYTICS_VISITOR_KEY = "heart-guide-analytics-visitor";
+
+function analyticsVisitorKey() {
+  try {
+    const saved = window.localStorage.getItem(ANALYTICS_VISITOR_KEY);
+    if (saved) return saved;
+    const key = window.crypto?.randomUUID?.() ?? `hg-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    window.localStorage.setItem(ANALYTICS_VISITOR_KEY, key);
+    return key;
+  } catch {
+    return null;
+  }
+}
 
 function logGuideEvent(guideId: string, eventType: "started" | "completed" | "cta_clicked") {
   void fetch("/api/guide-events", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ guideId, eventType }),
+    body: JSON.stringify({ guideId, eventType, visitorKey: analyticsVisitorKey() }),
+    keepalive: true,
   }).catch(() => undefined);
 }
 

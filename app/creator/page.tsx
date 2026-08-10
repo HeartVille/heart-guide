@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { analyticsByGuide, summariseGuideAnalytics, type GuideAnalyticsEvent } from "@/lib/guide-analytics";
 import SiteHeader from "@/components/site-header";
 import { deleteGuide, setGuideStatus } from "./actions";
 
@@ -68,18 +69,11 @@ export default async function CreatorPage({
 
   const guideIds = (guides ?? []).map((guide) => guide.id);
   const { data: events } = guideIds.length
-    ? await supabase.from("guide_events").select("guide_id, event_type").in("guide_id", guideIds)
-    : { data: [] as { guide_id: string; event_type: string }[] };
-
-  const countsByGuide = new Map<string, { started: number; completed: number; clicked: number }>();
-  for (const event of events ?? []) {
-    const current = countsByGuide.get(event.guide_id) ?? { started: 0, completed: 0, clicked: 0 };
-    if (event.event_type === "started") current.started += 1;
-    if (event.event_type === "completed") current.completed += 1;
-    if (event.event_type === "cta_clicked") current.clicked += 1;
-    countsByGuide.set(event.guide_id, current);
-  }
-  const totalCtaClicks = [...countsByGuide.values()].reduce((sum, counts) => sum + counts.clicked, 0);
+    ? await supabase.from("guide_events").select("id, guide_id, event_type, visitor_key").in("guide_id", guideIds)
+    : { data: [] as GuideAnalyticsEvent[] };
+  const creatorEvents = (events ?? []) as GuideAnalyticsEvent[];
+  const analyticsPerGuide = analyticsByGuide(creatorEvents);
+  const totals = summariseGuideAnalytics(creatorEvents);
   const hasGuide = Boolean(guides?.length);
   const hasPublishedGuide = Boolean(guides?.some((guide) => guide.status === "published"));
   const completedSteps = Number(Boolean(profile)) + Number(hasGuide) + Number(hasPublishedGuide);
@@ -127,6 +121,15 @@ export default async function CreatorPage({
         {error && <p className="auth-error creator-page-error">{error}</p>}
 
         {profile && (
+          <section className="metrics" aria-label="Your guide analytics">
+            <article><small>Unique participants</small><strong>{totals.participants}</strong><span>Started one of your guides</span></article>
+            <article><small>Completion rate</small><strong>{totals.completionRate}%</strong><span>{totals.completed} people completed</span></article>
+            <article><small>CTA clicks</small><strong>{totals.ctaClicks}</strong><span>After a completed guide</span></article>
+            <article><small>CTA conversion</small><strong>{totals.ctaRate}%</strong><span>Of completed journeys</span></article>
+          </section>
+        )}
+
+        {profile && (
           <section className="panel profile-summary">
             <div className="profile-summary-head">
               {profile.avatar_url && <img className="profile-avatar" src={profile.avatar_url} alt={profile.display_name} />}
@@ -141,7 +144,7 @@ export default async function CreatorPage({
                   {profile.resource_title || "Resource"} ↗
                 </a>
                 <small style={{ display: "block", marginTop: 6, color: "var(--muted)" }}>
-                  {totalCtaClicks} click{totalCtaClicks === 1 ? "" : "s"} on your CTA across all guides
+                  {totals.ctaClicks} unique CTA click{totals.ctaClicks === 1 ? "" : "s"} across all guides
                 </small>
               </div>
             )}
@@ -169,13 +172,13 @@ export default async function CreatorPage({
         ) : (
           <section className="panel">
             {guides.map((guide) => {
-              const counts = countsByGuide.get(guide.id) ?? { started: 0, completed: 0, clicked: 0 };
+              const analytics = analyticsPerGuide.get(guide.id) ?? { participants: 0, completed: 0, ctaClicks: 0, completionRate: 0, ctaRate: 0 };
               return (
               <div className="guide-row" key={guide.id}>
                 <span className={`mini-icon ${guide.colour}`}>{guide.symbol}</span>
                 <div>
                   <strong>{guide.title}</strong>
-                  <small>{guide.category} · {guide.status === "published" ? "Published" : "Draft"} · {counts.started} started, {counts.completed} completed, {counts.clicked} CTA clicks</small>
+                  <small>{guide.category} · {guide.status === "published" ? "Published" : "Draft"} · {analytics.participants} participants · {analytics.completionRate}% completed · {analytics.ctaRate}% CTA conversion</small>
                 </div>
                 <Link className="text-button" href={`/creator/guides/${guide.id}`}>Edit</Link>
                 <form action={setGuideStatus.bind(null, guide.id, guide.status === "published" ? "draft" : "published")}>
