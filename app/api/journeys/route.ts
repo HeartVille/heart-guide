@@ -9,17 +9,24 @@ export async function GET() {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sign in required." }, { status: 401 });
 
-  const { data, error } = await supabase
-    .from("guide_journey_entries")
-    .select("id, guide_id, answers, current_step, completed, created_at, updated_at")
-    .order("updated_at", { ascending: false });
+  const [guideEntriesResult, messageScoreResults] = await Promise.all([
+    supabase
+      .from("guide_journey_entries")
+      .select("id, guide_id, answers, current_step, completed, created_at, updated_at")
+      .order("updated_at", { ascending: false }),
+    supabase
+      .from("message_score_results")
+      .select("id, slug, original_message, overall_score, created_at, updated_at")
+      .order("updated_at", { ascending: false }),
+  ]);
 
-  if (error) {
+  if (guideEntriesResult.error || messageScoreResults.error) {
     return NextResponse.json({ error: "Unable to load journeys." }, { status: 500 });
   }
 
-  return NextResponse.json({
-    journeys: data.map((row) => ({
+  const journeys = [
+    ...(guideEntriesResult.data ?? []).map((row) => ({
+      kind: "guide" as const,
       id: row.id,
       guideId: row.guide_id,
       answers: row.answers ?? [],
@@ -28,6 +35,20 @@ export async function GET() {
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     })),
+    ...(messageScoreResults.data ?? []).map((row) => ({
+      kind: "message-score" as const,
+      id: row.id,
+      slug: row.slug,
+      title: "Soul-Aligned Message Score",
+      originalMessage: row.original_message,
+      overallScore: row.overall_score,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    })),
+  ].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+
+  return NextResponse.json({
+    journeys,
   });
 }
 

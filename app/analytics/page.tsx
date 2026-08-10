@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { analyticsByGuide, summariseGuideAnalytics, type GuideAnalyticsEvent } from "@/lib/guide-analytics";
+import { summariseConversionFunnel, type ConversionFunnelEvent } from "@/lib/conversion-analytics";
 import SiteHeader from "@/components/site-header";
 import Link from "next/link";
 
@@ -16,15 +17,18 @@ export default async function AnalyticsPage() {
   if (user.email?.toLowerCase() !== ownerEmail) redirect("/creator");
 
   const admin = createAdminClient();
-  const [{ data: guides }, { data: events }, { data: profiles }] = await Promise.all([
+  const [{ data: guides }, { data: events }, { data: profiles }, { data: conversionEvents }, { count: activeFounderCount }] = await Promise.all([
     admin.from("guides").select("id, title, creator_id, status").order("created_at", { ascending: false }),
     admin.from("guide_events").select("id, guide_id, event_type, visitor_key"),
     admin.from("creator_profiles").select("user_id, display_name"),
+    admin.from("conversion_funnel_events").select("id, event_type, visitor_key"),
+    admin.from("founder_memberships").select("*", { count: "exact", head: true }).eq("status", "active"),
   ]);
 
   const allEvents = (events ?? []) as GuideAnalyticsEvent[];
   const totals = summariseGuideAnalytics(allEvents);
   const perGuide = analyticsByGuide(allEvents);
+  const conversionFunnel = summariseConversionFunnel((conversionEvents ?? []) as ConversionFunnelEvent[]);
   const profileNames = new Map((profiles ?? []).map((profile) => [profile.user_id, profile.display_name]));
   const guideRows = (guides ?? []).map((guide) => ({
     ...guide,
@@ -47,6 +51,17 @@ export default async function AnalyticsPage() {
             <article><small>Completion rate</small><strong>{totals.completionRate}%</strong><span>{totals.completed} completed</span></article>
             <article><small>CTA clicks</small><strong>{totals.ctaClicks}</strong><span>After a completed guide</span></article>
             <article><small>CTA conversion</small><strong>{totals.ctaRate}%</strong><span>Of completed journeys</span></article>
+          </section>
+
+          <section className="panel conversion-funnel">
+            <div className="panel-title"><div><h2>Conversion paths</h2><p>Track the paths that lead into feedback and Founder Access.</p></div></div>
+            <div className="conversion-funnel-grid">
+              <article><small>Message Score starts</small><strong>{conversionFunnel.messageScoreStarts}</strong><span>People who began</span></article>
+              <article><small>Reports delivered</small><strong>{conversionFunnel.messageScoreCompleted}</strong><span>{conversionFunnel.messageScoreCompletionRate}% of starts</span></article>
+              <article><small>Feedback bookings</small><strong>{conversionFunnel.validationBookingClicks}</strong><span>{conversionFunnel.validationBookingRate}% of reports</span></article>
+              <article><small>Founder checkout</small><strong>{conversionFunnel.founderCheckoutStarts}</strong><span>Started from Heart Guide</span></article>
+              <article><small>Active Founder Access</small><strong>{activeFounderCount ?? 0}</strong><span>Confirmed by GHL</span></article>
+            </div>
           </section>
 
           <section className="panel analytics-table-wrap">

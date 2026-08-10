@@ -30,7 +30,8 @@ type Guide = {
   resultPrompt: string;
   creator: Creator | null;
 };
-type SavedJourney = {
+type SavedGuideJourney = {
+  kind: "guide";
   id: string;
   guideId: string;
   answers: string[];
@@ -39,6 +40,17 @@ type SavedJourney = {
   createdAt: string;
   updatedAt: string;
 };
+type SavedMessageScore = {
+  kind: "message-score";
+  id: string;
+  slug: "soul-aligned-message-score";
+  title: string;
+  originalMessage: string;
+  overallScore: number;
+  createdAt: string;
+  updatedAt: string;
+};
+type SavedJourney = SavedGuideJourney | SavedMessageScore;
 
 const PENDING_RESULT_KEY = "heart-guide-pending-result";
 const ANALYTICS_VISITOR_KEY = "heart-guide-analytics-visitor";
@@ -60,6 +72,15 @@ function logGuideEvent(guideId: string, eventType: "started" | "completed" | "ct
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ guideId, eventType, visitorKey: analyticsVisitorKey() }),
+    keepalive: true,
+  }).catch(() => undefined);
+}
+
+function logConversionEvent(eventType: "message_score_started" | "message_score_completed" | "validation_booking_clicked" | "founder_checkout_started") {
+  void fetch("/api/conversion-events", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ eventType, visitorKey: analyticsVisitorKey() }),
     keepalive: true,
   }).catch(() => undefined);
 }
@@ -99,6 +120,7 @@ export default function HeartGuideClient({
   const [email, setEmail] = useState("");
   const [consent, setConsent] = useState(false);
   const [submissionState, setSubmissionState] = useState<"idle" | "sending" | "saved" | "offline">("idle");
+  const [messageScoreJourneySaved, setMessageScoreJourneySaved] = useState(false);
   const [activeGuideId, setActiveGuideId] = useState<string | null>(initialGuideId ?? guides[0]?.id ?? null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -200,7 +222,7 @@ export default function HeartGuideClient({
       return;
     }
     setActiveGuideId(id);
-    const saved = savedJourneys.find((journey) => journey.guideId === id && !journey.completed);
+    const saved = savedJourneys.find((journey): journey is SavedGuideJourney => journey.kind === "guide" && journey.guideId === id && !journey.completed);
     setActiveJourneyId(saved?.id ?? null);
     setStep(saved?.currentStep ?? 0);
     setAnswers(saved?.answers?.length === 4 ? saved.answers : ["", "", "", ""]);
@@ -212,6 +234,16 @@ export default function HeartGuideClient({
   }
 
   function openSavedJourney(journey: SavedJourney) {
+    if (journey.kind === "message-score") {
+      setCurrentMessage(journey.originalMessage);
+      setFirstName(user?.name ?? "");
+      setEmail(user?.email ?? "");
+      setMessageStage("report");
+      setSubmissionState("saved");
+      setMessageScoreJourneySaved(true);
+      navigate("message-score");
+      return;
+    }
     if (!canOpenGuide(journey.guideId)) return;
     setActiveGuideId(journey.guideId);
     setActiveJourneyId(journey.id);
@@ -242,7 +274,9 @@ export default function HeartGuideClient({
     setFirstName("");
     setEmail("");
     setConsent(false);
+    setMessageScoreJourneySaved(false);
     navigate("message-score");
+    logConversionEvent("message_score_started");
   }
 
   const messageReport = useMemo(() => scoreMessage(currentMessage), [currentMessage]);
@@ -270,14 +304,56 @@ export default function HeartGuideClient({
 
   async function revealMessageScore() {
     setSubmissionState("sending");
+    setMessageScoreJourneySaved(false);
     setMessageStage("report");
     window.scrollTo({ top: 0, behavior: "smooth" });
+    let delivered = false;
     try {
       const result = await sendLead("Message Score Completed");
-      setSubmissionState(result.delivered ? "saved" : "offline");
+      delivered = result.delivered;
+      logConversionEvent("message_score_completed");
     } catch {
-      setSubmissionState("offline");
+      // The report can still be saved locally when delivery is temporarily unavailable.
     }
+
+    if (user) {
+      try {
+        const savedResponse = await fetch("/api/message-score-results", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            originalMessage: currentMessage,
+            overallScore: messageReport.total,
+            categoryScores: Object.fromEntries(messageReport.categories.map((item) => [item.name, item.score])),
+            greatestStrength: messageReport.strongestArea,
+            priorityImprovement: messageReport.priorityArea,
+          }),
+        });
+        if (savedResponse.ok) {
+          const saved = (await savedResponse.json()) as { resultId: string; slug: "soul-aligned-message-score"; createdAt: string; updatedAt: string };
+          setSavedJourneys((current) => [
+            {
+              kind: "message-score",
+              id: saved.resultId,
+              slug: saved.slug,
+              title: "Soul-Aligned Message Score",
+              originalMessage: currentMessage,
+              overallScore: messageReport.total,
+              createdAt: saved.createdAt,
+              updatedAt: saved.updatedAt,
+            },
+            ...current,
+          ]);
+          setMessageScoreJourneySaved(true);
+        } else {
+          setNotice("Your report is ready, but it could not be saved to My Journey just now.");
+        }
+      } catch {
+        setNotice("Your report is ready, but it could not be saved to My Journey just now.");
+      }
+    }
+
+    setSubmissionState(delivered ? "saved" : "offline");
   }
 
   async function saveJourney(nextStep: number, isCompleted: boolean, answersOverride?: string[], guideIdOverride?: string) {
@@ -295,7 +371,7 @@ export default function HeartGuideClient({
       const result = (await response.json()) as { journeyId: string; createdAt: string; updatedAt: string };
       setActiveJourneyId(result.journeyId);
       setSavedJourneys((current) => [
-        { id: result.journeyId, guideId: guideId!, answers: payloadAnswers, currentStep: nextStep, completed: isCompleted, createdAt: current.find((journey) => journey.id === result.journeyId)?.createdAt ?? result.createdAt, updatedAt: result.updatedAt },
+        { kind: "guide", id: result.journeyId, guideId: guideId!, answers: payloadAnswers, currentStep: nextStep, completed: isCompleted, createdAt: current.find((journey) => journey.id === result.journeyId)?.createdAt ?? result.createdAt, updatedAt: result.updatedAt },
         ...current.filter((journey) => journey.id !== result.journeyId),
       ]);
       setSaveState("saved");
@@ -482,6 +558,19 @@ export default function HeartGuideClient({
           ) : (
             <section className="saved-grid">
               {savedJourneys.map((journey) => {
+                if (journey.kind === "message-score") {
+                  return (
+                    <article className="saved-card" key={journey.id}>
+                      <span className="guide-icon">✦</span>
+                      <div>
+                        <small>MESSAGE SCORE · {journey.slug}</small>
+                        <h2>{journey.title}</h2>
+                        <p>{journey.overallScore}/100 · Saved {new Date(journey.updatedAt).toLocaleDateString()}</p>
+                      </div>
+                      <button className="button secondary" onClick={() => openSavedJourney(journey)}>View results <span>→</span></button>
+                    </article>
+                  );
+                }
                 const detail = guides.find((guide) => guide.id === journey.guideId);
                 if (!detail) return null;
                 return (
@@ -650,7 +739,8 @@ export default function HeartGuideClient({
                 <div className="score-ring" style={{ background: `conic-gradient(var(--jade) ${messageReport.total}%, #e8ece8 0)` }}><span>{messageReport.total}<small>/100</small></span></div>
               </header>
               <div className="score-status">{messageReport.total >= 80 ? "Compelling" : messageReport.total >= 60 ? "Resonant" : messageReport.total >= 40 ? "Emerging" : "Ready to clarify"}</div>
-              {submissionState === "saved" && <p className="delivery-status success">✓ Your result has been added to your Heart Guide journey.</p>}
+              {messageScoreJourneySaved && <p className="delivery-status success">✓ Your result has been saved to My Journey.</p>}
+              {submissionState === "saved" && !messageScoreJourneySaved && <p className="delivery-status success">✓ Your report has been sent. Sign in to save it to My Journey.</p>}
               {submissionState === "offline" && <p className="delivery-status">Your report is ready here. Email delivery will begin when the secure nurture connection is activated.</p>}
               <blockquote className="original-message">“{currentMessage}”</blockquote>
               <section className="category-results">
@@ -671,7 +761,7 @@ export default function HeartGuideClient({
               </section>
               <section className="validation-invite">
                 <div><p className="eyebrow">Help shape the wider program</p><h2>Would you share your perspective?</h2><p>Your message is one foundation of a scalable heart-led business. Lotus is refining the <strong>Six Figure Heart-Led Business Accelerator™</strong> and inviting a small number of coaches to hear its five-stage outline and give honest feedback in a structured 20-minute conversation.</p><ul><li>This is not a sales call.</li><li>Lotus will mainly listen and take notes.</li><li>Your insight will help shape the program.</li></ul></div>
-                <div className="invite-action"><span className="guide-icon">✦</span><h3>20-minute Validation Call</h3><p>Explore the program vision and answer eleven focused feedback questions.</p><a className="button primary" href="https://tidycal.com/lotus/feedback" target="_blank" rel="noreferrer" onClick={() => void sendLead("Validation Booking Clicked").catch(() => undefined)}>Book my feedback call <span>→</span></a><small>If the program is validated and relevant, a separate strategy session may be offered afterwards.</small></div>
+                <div className="invite-action"><span className="guide-icon">✦</span><h3>20-minute Validation Call</h3><p>Explore the program vision and answer eleven focused feedback questions.</p><a className="button primary" href="https://tidycal.com/lotus/feedback" target="_blank" rel="noreferrer" onClick={() => { logConversionEvent("validation_booking_clicked"); void sendLead("Validation Booking Clicked").catch(() => undefined); }}>Book my feedback call <span>→</span></a><small>If the program is validated and relevant, a separate strategy session may be offered afterwards.</small></div>
               </section>
               <div className="report-actions"><button className="button secondary" onClick={() => window.print()}>Save my report</button><button className="text-button" onClick={startMessageScore}>Score another message</button></div>
             </section>
@@ -699,7 +789,7 @@ export default function HeartGuideClient({
               <button className="button primary membership-cta" onClick={() => navigate("library")}>Explore Heart Guides <span>→</span></button>
             ) : (
               <>
-                <a className="button primary membership-cta" href={FOUNDER_CHECKOUT_URL}>Choose my Founder Access <span>→</span></a>
+                <a className="button primary membership-cta" href={FOUNDER_CHECKOUT_URL} onClick={() => logConversionEvent("founder_checkout_started")}>Choose my Founder Access <span>→</span></a>
                 <p className="membership-note">Secure checkout. Choose monthly or annual payment on the next page.</p>
               </>
             )}
