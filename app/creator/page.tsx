@@ -41,7 +41,12 @@ function CreatorLanding() {
   );
 }
 
-export default async function CreatorPage() {
+export default async function CreatorPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -100,6 +105,7 @@ export default async function CreatorPage() {
                 ? "Manage your profile and your published Heart Guides."
                 : "Set up your creator profile, then build a free Heart Guide of your own. Your name, bio and resource link appear at the end of every guide you publish."}
             </p>
+            <p className="creator-limit-note">Free creators can keep drafts, with one guide live at a time.</p>
           </div>
           <Link className="button primary" href="/creator/profile">
             {profile ? "Edit profile" : "Set up my profile"}
@@ -118,6 +124,7 @@ export default async function CreatorPage() {
           </ol>
           {nextStep ? <Link className="button primary" href={nextStep.href}>{nextStep.label} <span>→</span></Link> : <p className="onboarding-live">✓ Share your guide and watch its results below.</p>}
         </section>
+        {error && <p className="auth-error creator-page-error">{error}</p>}
 
         {profile && (
           <section className="panel profile-summary">

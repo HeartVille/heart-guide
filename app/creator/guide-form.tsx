@@ -208,6 +208,7 @@ export default function GuideForm({
       </label>
 
       <button className="button primary full-button" type="submit">{submitLabel} <span>→</span></button>
+      <p className="guide-form-hint">Free creators can save any number of drafts and publish one guide at a time.</p>
     </form>
   );
 }

@@ -102,6 +102,35 @@ create policy "Creators can delete their own guides"
   to authenticated
   using (creator_id = auth.uid());
 
+create or replace function public.enforce_one_live_guide_per_free_creator()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if new.status = 'published'
+    and exists (select 1 from public.creator_profiles where user_id = new.creator_id)
+    and exists (
+      select 1
+      from public.guides
+      where creator_id = new.creator_id
+        and status = 'published'
+        and id is distinct from new.id
+    ) then
+    raise exception using
+      errcode = '23505',
+      message = 'Free creators can publish one live guide at a time.',
+      hint = 'Unpublish your current live guide before publishing another one.';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger enforce_one_live_guide_per_free_creator
+before insert or update of status, creator_id on public.guides
+for each row
+execute function public.enforce_one_live_guide_per_free_creator();
+
 -- Saved reflective journey progress, one row per in-progress or completed guide.
 create table if not exists public.guide_journey_entries (
   id uuid primary key default gen_random_uuid(),

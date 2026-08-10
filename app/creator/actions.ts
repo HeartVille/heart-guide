@@ -149,10 +149,17 @@ export async function updateGuide(guideId: string, formData: FormData) {
 export async function setGuideStatus(guideId: string, status: "draft" | "published") {
   const { supabase, user } = await requireUser();
 
-  await supabase
+  const { error } = await supabase
     .from("guides")
     .update({ status, updated_at: new Date().toISOString() })
     .eq("id", guideId);
+
+  if (error) {
+    const message = status === "published" && error.code === "23505"
+      ? "Your free creator account can have one live guide. Unpublish your current guide before publishing another."
+      : "Unable to update this guide right now.";
+    redirect(`/creator?error=${encodeURIComponent(message)}`);
+  }
 
   if (status === "published") {
     const [{ data: guide }, { data: profile }] = await Promise.all([
