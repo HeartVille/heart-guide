@@ -1,17 +1,52 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import SiteHeader from "@/components/site-header";
 import { deleteGuide, setGuideStatus } from "./actions";
 
 export const dynamic = "force-dynamic";
 
+function CreatorLanding() {
+  return (
+    <>
+      <SiteHeader />
+      <main className="creator-landing">
+        <section className="creator-hero">
+          <p className="eyebrow">Heart Guide for creators</p>
+          <h1>Let people experience your wisdom—not just read about it.</h1>
+          <p>Turn one part of your expertise into a short reflective guide that helps someone find clarity and introduces the next step with you.</p>
+          <div className="actions">
+            <Link className="button primary" href="/sign-up?next=/creator">Create my first guide <span>→</span></Link>
+            <Link className="button secondary" href="/sign-in?next=/creator">Sign in</Link>
+          </div>
+          <small>No technical setup. Start with one focused outcome.</small>
+        </section>
+
+        <section className="creator-value">
+          <article><span>01</span><h2>Share a useful experience</h2><p>Guide people through four thoughtful questions instead of asking them to consume more content.</p></article>
+          <article><span>02</span><h2>Build trust naturally</h2><p>Let your approach become visible through the quality of the reflection you create.</p></article>
+          <article><span>03</span><h2>Offer a relevant next step</h2><p>Add one resource or invitation after the result, when someone already understands its value.</p></article>
+        </section>
+
+        <section className="creator-how">
+          <div><p className="eyebrow">From expertise to live guide</p><h2>Your first guide in three steps.</h2></div>
+          <ol>
+            <li><b>1</b><span><strong>Create your profile</strong><small>Introduce your work and choose one useful next step.</small></span></li>
+            <li><b>2</b><span><strong>Shape one focused guide</strong><small>Start from your idea or use AI to draft four editable questions.</small></span></li>
+            <li><b>3</b><span><strong>Publish and share</strong><small>Use your direct link and see starts, completions and CTA clicks.</small></span></li>
+          </ol>
+          <Link className="button primary" href="/sign-up?next=/creator">Begin as a creator <span>→</span></Link>
+        </section>
+      </main>
+    </>
+  );
+}
+
 export default async function CreatorPage() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/sign-in?next=/creator");
+  if (!user) return <CreatorLanding />;
 
   const [{ data: profile }, { data: guides }] = await Promise.all([
     supabase
@@ -40,6 +75,16 @@ export default async function CreatorPage() {
     countsByGuide.set(event.guide_id, current);
   }
   const totalCtaClicks = [...countsByGuide.values()].reduce((sum, counts) => sum + counts.clicked, 0);
+  const hasGuide = Boolean(guides?.length);
+  const hasPublishedGuide = Boolean(guides?.some((guide) => guide.status === "published"));
+  const completedSteps = Number(Boolean(profile)) + Number(hasGuide) + Number(hasPublishedGuide);
+  const nextStep = !profile
+    ? { href: "/creator/profile", label: "Create my profile" }
+    : !hasGuide
+      ? { href: "/creator/guides/new", label: "Build my first guide" }
+      : !hasPublishedGuide
+        ? { href: `/creator/guides/${guides![0].id}`, label: "Review and publish" }
+        : null;
 
   return (
     <>
@@ -60,6 +105,19 @@ export default async function CreatorPage() {
             {profile ? "Edit profile" : "Set up my profile"}
           </Link>
         </div>
+
+        <section className="creator-onboarding panel">
+          <div className="onboarding-head">
+            <div><p className="eyebrow">Your creator path</p><h2>{completedSteps === 3 ? "Your guide is live." : "Publish your first guide."}</h2></div>
+            <span>{completedSteps}/3 complete</span>
+          </div>
+          <ol>
+            <li className={profile ? "complete" : "current"}><b>{profile ? "✓" : "1"}</b><span><strong>Introduce your work</strong><small>Create the profile and next step shown after your guide.</small></span></li>
+            <li className={hasGuide ? "complete" : profile ? "current" : ""}><b>{hasGuide ? "✓" : "2"}</b><span><strong>Build one focused guide</strong><small>Help someone reach one clear, useful outcome.</small></span></li>
+            <li className={hasPublishedGuide ? "complete" : hasGuide ? "current" : ""}><b>{hasPublishedGuide ? "✓" : "3"}</b><span><strong>Publish and share</strong><small>Use your link and learn from real participant activity.</small></span></li>
+          </ol>
+          {nextStep ? <Link className="button primary" href={nextStep.href}>{nextStep.label} <span>→</span></Link> : <p className="onboarding-live">✓ Share your guide and watch its results below.</p>}
+        </section>
 
         {profile && (
           <section className="panel profile-summary">

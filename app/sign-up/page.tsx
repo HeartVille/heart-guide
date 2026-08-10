@@ -5,9 +5,10 @@ import SiteHeader from "@/components/site-header";
 export default async function SignUpPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; next?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, next } = await searchParams;
+  const safeNext = next?.startsWith("/") ? next : "/";
 
   return (
     <>
@@ -18,6 +19,7 @@ export default async function SignUpPage({
         <h1>Begin your journey</h1>
         <p>Create an account to save your reflections privately in My Journey.</p>
         <form className="auth-form" action={signUp}>
+          <input type="hidden" name="next" value={safeNext} />
           <label>
             First name
             <input type="text" name="name" placeholder="Your first name" required autoFocus />
@@ -36,7 +38,7 @@ export default async function SignUpPage({
         </form>
         {error && <p className="auth-error">{error}</p>}
         <p className="auth-switch">
-          Already have an account? <Link href="/sign-in">Sign in</Link>
+          Already have an account? <Link href={`/sign-in?next=${encodeURIComponent(safeNext)}`}>Sign in</Link>
         </p>
       </div>
     </main>
