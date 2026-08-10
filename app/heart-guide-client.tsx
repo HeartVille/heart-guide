@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { FOUNDER_CHECKOUT_URL } from "@/lib/founder-checkout";
+import { scoreMessage } from "@/lib/message-score";
 
 type View = "home" | "library" | "journey" | "my-journey" | "message-score" | "membership";
 type Category = "All" | "Relationships" | "Business" | "Wellbeing";
@@ -230,29 +231,6 @@ export default function HeartGuideClient({
     navigate("message-score");
   }
 
-  function scoreMessage(message: string) {
-    const text = message.toLowerCase();
-    const words = message.trim().split(/\s+/).filter(Boolean).length;
-    const audienceTerms = ["coach", "consultant", "entrepreneur", "founder", "leader", "therapist", "healer", "business", "women", "men", "people", "clients"];
-    const problemTerms = ["struggle", "tired", "overwhelm", "stuck", "because", "without", "inconsistent", "challenge", "frustrat", "pain"];
-    const outcomeTerms = ["help", "create", "build", "grow", "scale", "transform", "achieve", "clarity", "revenue", "freedom", "impact"];
-    const distinctTerms = ["through", "using", "method", "framework", "approach", "system", "embodied", "heart", "mindful", "unlike", "without"];
-    const hits = (terms: string[]) => terms.filter((term) => text.includes(term)).length;
-    const audience = Math.min(20, 8 + hits(audienceTerms) * 3);
-    const problem = Math.min(20, 7 + hits(problemTerms) * 3);
-    const transformation = Math.min(20, 8 + hits(outcomeTerms) * 2);
-    const distinction = Math.min(20, 6 + hits(distinctTerms) * 3);
-    const simplicity = words >= 12 && words <= 55 ? 18 : words <= 85 ? 14 : words <= 120 ? 10 : 7;
-    const categories = [
-      { name: "Right-Person Clarity", score: audience, note: audience >= 15 ? "Your audience can begin to recognise themselves." : "Name one specific kind of client, at a recognisable stage." },
-      { name: "Real-Problem Relevance", score: problem, note: problem >= 15 ? "You connect your work to a problem that matters." : "Use the words clients use when describing what is difficult now." },
-      { name: "Transformation Clarity", score: transformation, note: transformation >= 15 ? "The direction of change is visible." : "Make the result concrete enough for someone to picture it." },
-      { name: "Distinctive Path", score: distinction, note: distinction >= 15 ? "There are signs of a distinctive way of working." : "Name the method, perspective or principle that makes your path yours." },
-      { name: "Simplicity & Resonance", score: simplicity, note: simplicity >= 15 ? "Your message is easy to absorb." : "Choose one audience, one problem and one meaningful outcome." },
-    ];
-    return { total: categories.reduce((sum, item) => sum + item.score, 0), categories };
-  }
-
   const messageReport = useMemo(() => scoreMessage(currentMessage), [currentMessage]);
 
   async function sendLead(stage: "Message Score Completed" | "Validation Booking Clicked") {
@@ -266,8 +244,8 @@ export default function HeartGuideClient({
         message: currentMessage.trim(),
         totalScore: messageReport.total,
         categoryScores: Object.fromEntries(messageReport.categories.map((item) => [item.name, item.score])),
-        strongestArea: [...messageReport.categories].sort((a, b) => b.score - a.score)[0]?.name,
-        priorityArea: [...messageReport.categories].sort((a, b) => a.score - b.score)[0]?.name,
+        strongestArea: messageReport.strongestArea,
+        priorityArea: messageReport.priorityArea,
         stage,
         source: "Heart Guide — Soul-Aligned Message Score",
       }),
@@ -667,8 +645,8 @@ export default function HeartGuideClient({
               </section>
               <section className="report-insight">
                 <p className="eyebrow">Your clearest opportunity</p>
-                <h2>Make your value easier to recognise.</h2>
-                <p>Your work already has depth. Now bring the message into one simple sequence: <strong>the right person, the problem they recognise, the transformation they want and the distinctive path you provide.</strong></p>
+                <h2>{messageReport.opportunityTitle}</h2>
+                <p>{messageReport.opportunity}</p>
                 <div className="message-formula"><span>Who</span><b>＋</b><span>Problem</span><b>＋</b><span>Transformation</span><b>＋</b><span>Your path</span></div>
               </section>
               <section className="blueprint-section">
