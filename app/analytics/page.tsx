@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { analyticsByGuide, summariseGuideAnalytics, type GuideAnalyticsEvent } from "@/lib/guide-analytics";
 import SiteHeader from "@/components/site-header";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +37,7 @@ export default async function AnalyticsPage() {
       <SiteHeader />
       <main className="creator-page single-column">
         <section className="dashboard analytics-dashboard">
+          <Link className="text-button analytics-back" href="/creator">← Creator Studio</Link>
           <p className="eyebrow">Heart Guide owner view</p>
           <h1>Guide performance</h1>
           <p className="analytics-lede">All-time participant flow across Heart Guide. Reflections and Message Score text are never shown here.</p>

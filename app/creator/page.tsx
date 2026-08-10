@@ -53,6 +53,8 @@ export default async function CreatorPage({
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return <CreatorLanding />;
+  const ownerEmail = (process.env.ADMIN_NOTIFICATION_EMAIL ?? "hello@heartville.org").trim().toLowerCase();
+  const isOwner = user.email?.toLowerCase() === ownerEmail;
 
   const [{ data: profile }, { data: guides }] = await Promise.all([
     supabase
@@ -101,9 +103,12 @@ export default async function CreatorPage({
             </p>
             <p className="creator-limit-note">Free creators can keep drafts, with one guide live at a time.</p>
           </div>
-          <Link className="button primary" href="/creator/profile">
-            {profile ? "Edit profile" : "Set up my profile"}
-          </Link>
+          <div className="dashboard-actions">
+            {isOwner && <Link className="button secondary" href="/analytics">Heart Guide insights</Link>}
+            <Link className="button primary" href="/creator/profile">
+              {profile ? "Edit profile" : "Set up my profile"}
+            </Link>
+          </div>
         </div>
 
         <section className="creator-onboarding panel">
