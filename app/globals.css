@@ -116,6 +116,7 @@ footer{border-top:1px solid var(--line);min-height:120px;padding:25px 48px;displ
 .profile-summary{margin:24px 0}.profile-summary h2{font:500 26px "Cormorant Garamond",serif;margin:0 0 8px}.profile-summary p{color:var(--muted);font-size:13px;line-height:1.6;margin:0 0 12px}.profile-links{display:flex;gap:18px;flex-wrap:wrap}.profile-links a{font-size:12px;font-weight:700;color:#39776e;text-decoration:none}
 .profile-summary-head{display:flex;align-items:center;gap:16px}.profile-summary-head h2{margin:0 0 6px}
 .guide-row form{display:contents}
+.share-guide-link{display:flex;align-items:center;gap:8px;margin-top:8px;color:var(--muted);font-size:10px;min-width:0}.share-guide-link>span{font-weight:700;white-space:nowrap}.share-guide-link code{min-width:0;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:1px solid var(--line);border-radius:6px;background:#f7f8f5;padding:4px 6px;font:10px ui-monospace,SFMono-Regular,Menlo,monospace}.share-guide-link>div{display:flex;gap:8px;align-items:center;white-space:nowrap}.share-guide-link a,.share-guide-link button{border:0;background:none;padding:0;color:#39776e;font:700 10px inherit;text-decoration:none;cursor:pointer}.share-guide-link button:hover,.share-guide-link a:hover{text-decoration:underline}
 .creator-form-card{width:min(640px,100%)}
 .guide-form{gap:20px}.guide-form textarea,.guide-form select{width:100%;margin-top:8px;border:1px solid var(--line);border-radius:13px;padding:12px 14px;background:#fffefa;outline:0;resize:vertical}.guide-form select{height:50px;padding:0 14px}
 .ai-assist{border:1px solid rgba(214,179,106,.45);background:#fffaf0;border-radius:16px;padding:20px;display:grid;gap:12px}.ai-assist button{width:max-content}.ai-assist .guide-form-hint{margin:0}
@@ -124,6 +125,7 @@ footer{border-top:1px solid var(--line);min-height:120px;padding:25px 48px;displ
 .guide-step-fieldset{border:1px solid var(--line);border-radius:16px;padding:18px 20px;display:grid;gap:14px;margin:0}
 .guide-step-fieldset legend{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#39776e;padding:0 6px}
 @media(max-width:800px){.creator-value,.creator-how ol,.creator-onboarding ol{grid-template-columns:1fr}.creator-value{margin:55px auto}.creator-how{padding:36px 22px}.creator-landing{padding-top:55px}.onboarding-head{align-items:center}}
+@media(max-width:600px){.share-guide-link{flex-wrap:wrap}.share-guide-link code{max-width:100%}}
 
 /* Auth pages */
 .auth-page{min-height:calc(100vh - 150px);padding:72px 24px 96px;display:grid;place-items:center;background:radial-gradient(circle at 18% 12%,rgba(211,239,229,.72),transparent 34%),radial-gradient(circle at 84% 22%,rgba(232,220,245,.7),transparent 30%),var(--ivory)}

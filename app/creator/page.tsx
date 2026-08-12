@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { analyticsByGuide, summariseGuideAnalytics, type GuideAnalyticsEvent } from "@/lib/guide-analytics";
+import { siteOrigin } from "@/lib/site";
 import SiteHeader from "@/components/site-header";
+import ShareGuideLink from "@/components/share-guide-link";
 import { deleteGuide, setGuideStatus } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -55,6 +57,7 @@ export default async function CreatorPage({
   if (!user) return <CreatorLanding />;
   const ownerEmail = (process.env.ADMIN_NOTIFICATION_EMAIL ?? "hello@heartville.org").trim().toLowerCase();
   const isOwner = user.email?.toLowerCase() === ownerEmail;
+  const origin = await siteOrigin();
 
   const [{ data: profile }, { data: guides }] = await Promise.all([
     supabase
@@ -184,6 +187,7 @@ export default async function CreatorPage({
                 <div>
                   <strong>{guide.title}</strong>
                   <small>{guide.category} · {guide.status === "published" ? "Published" : "Draft"} · {analytics.participants} participants · {analytics.completionRate}% completed · {analytics.ctaRate}% CTA conversion</small>
+                  {guide.status === "published" && <ShareGuideLink url={`${origin}/guides/${guide.id}`} />}
                 </div>
                 <Link className="text-button" href={`/creator/guides/${guide.id}`}>Edit</Link>
                 <form action={setGuideStatus.bind(null, guide.id, guide.status === "published" ? "draft" : "published")}>

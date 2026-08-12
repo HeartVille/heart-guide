@@ -615,8 +615,8 @@ export default function HeartGuideClient({
                 <h2>Your reflection is ready.</h2>
                 <p className="result-note">Sign in or create a free account to see your personalised result and save it privately to My Journey.</p>
                 <div className="actions">
-                  <a className="button primary" href="/sign-in?next=/">Sign in <span>→</span></a>
-                  <a className="button secondary" href="/sign-up">Create free account <span>→</span></a>
+                  <a className="button primary" href={`/sign-in?next=${encodeURIComponent(`/guides/${activeGuide.id}`)}`}>Sign in <span>→</span></a>
+                  <a className="button secondary" href={`/sign-up?next=${encodeURIComponent(`/guides/${activeGuide.id}`)}`}>Create free account <span>→</span></a>
                 </div>
               </div>
             ) : !finished ? (
