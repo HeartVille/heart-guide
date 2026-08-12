@@ -20,6 +20,9 @@ export default async function VerifyEmailPage({
         <span className="guide-icon" style={{ margin: "0 auto" }}>✦</span>
         <h1>Check your email</h1>
         <p>We sent a code to {email}. Enter it below to finish creating your account.</p>
+        <p className="auth-notice">
+          Don&apos;t see it? Check your spam or junk folder, then whitelist hello@heartville.org.
+        </p>
         <form className="auth-form" action={verifySignupOtp}>
           <input type="hidden" name="email" value={email} />
           <input type="hidden" name="next" value={safeNext} />
